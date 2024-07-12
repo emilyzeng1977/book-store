@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>图书管理系统</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <h1>图书管理系统</h1>
+
+  <ul class="book-list" id="book-list">
+    <!-- Book items will be added here dynamically -->
+  </ul>
+
+  <div>
+    <button class="btn" onclick="openAddBookModal()">添加书籍</button>
+  </div>
+
+  <div id="addEditBookModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeAddEditBookModal()">&times;</span>
+      <h2 id="modal-title">添加书籍</h2>
+      <form id="book-form">
+        <input type="hidden" id="book-id">
+        <label for="title">书名：</label>
+        <input type="text" id="title" name="title" required><br><br>
+        <label for="author">作者：</label>
+        <input type="text" id="author" name="author" required><br><br>
+        <button type="submit" class="btn">保存</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/scripts.js"></script>
+</body>
+</html>
