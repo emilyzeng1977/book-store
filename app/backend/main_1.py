@@ -9,10 +9,12 @@ books = [
     {'id': 3, 'title': 'The Great Gatsby', 'author': 'F. Scott Fitzgerald'}
 ]
 
+
 # 获取所有书籍
 @app.route('/books', methods=['GET'])
 def get_books():
     return jsonify({'books': books})
+
 
 # 根据 ID 获取单本书
 @app.route('/books/<int:book_id>', methods=['GET'])
@@ -23,6 +25,7 @@ def get_book(book_id):
     else:
         return jsonify({'message': 'Book not found'}), 404
 
+
 # 添加新书
 @app.route('/books', methods=['POST'])
 def add_book():
@@ -30,6 +33,7 @@ def add_book():
     new_book['id'] = books[-1]['id'] + 1 if books else 1
     books.append(new_book)
     return jsonify(new_book), 201
+
 
 # 更新书籍信息
 @app.route('/books/<int:book_id>', methods=['PUT'])
@@ -42,12 +46,14 @@ def update_book(book_id):
     else:
         return jsonify({'message': 'Book not found'}), 404
 
+
 # 删除书籍
 @app.route('/books/<int:book_id>', methods=['DELETE'])
 def delete_book(book_id):
     global books
     books = [book for book in books if book['id'] != book_id]
     return jsonify({'message': 'Book deleted'})
+
 
 if __name__ == '__main__':
     app.run(debug=True)
