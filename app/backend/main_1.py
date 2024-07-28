@@ -10,11 +10,17 @@ books = [
 ]
 
 
-# 获取所有书籍
+# Retrieve all books, with optional filtering by author
 @app.route('/books', methods=['GET'])
 def get_books():
+    author = request.args.get('author')
+    if author:
+        filtered_books = [book for book in books if book['author'] == author]
+        if filtered_books:
+            return jsonify({'books': filtered_books})
+        else:
+            return jsonify({'message': f'No books found for author: {author}'}), 404
     return jsonify({'books': books})
-
 
 # 根据 ID 获取单本书
 @app.route('/books/<int:book_id>', methods=['GET'])
