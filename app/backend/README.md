@@ -9,7 +9,6 @@ Back End
 ```
 docker build -t my-python-app .
 docker run -it --rm -p 5000:5000 my-python-app
-
 ```
 
 
