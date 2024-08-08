@@ -35,6 +35,20 @@ services:
     depends_on:
       - mongo
 
+  book_store:
+    image: zengemily79/book_store:latest
+    container_name: book_store
+    environment:
+      MONGO_HOST: mongo
+      MONGO_PORT: 27017
+      MONGO_DB: book_store
+      MONGO_USER: tom
+      MONGO_PASSWORD: 123456
+    ports:
+      - "0.0.0.0:5000:5000"
+    networks:
+      - MONGO
+
 networks:
   MONGO:
     name: MONGO
