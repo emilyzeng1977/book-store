@@ -1,8 +1,11 @@
+import logging
+import os
+import socket
+
+from bson.objectid import ObjectId
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from pymongo import MongoClient
-from bson.objectid import ObjectId
-import logging, os
 
 app = Flask(__name__)
 CORS(app)
@@ -27,6 +30,23 @@ try:
 except Exception as e:
     logging.error(f"Error connecting to MongoDB: {e}")
     raise
+
+
+# Greet method to return a greeting message along with the local IP
+@app.route('/greet', methods=['GET'])
+def greet():
+    # Get the 'name' parameter from the query string, default to 'World' if not provided
+    name = request.args.get('name', 'World')
+
+    # Retrieve the local machine's IP address
+    hostname = socket.gethostname()
+    local_ip = socket.gethostbyname(hostname)
+
+    # Create a greeting message that includes the local IP
+    greeting_message = f"Hello, {name}! This server's IP address is {local_ip}."
+
+    # Return the greeting message as a JSON response
+    return jsonify({'message': greeting_message})
 
 
 # Retrieve all books
