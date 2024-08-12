@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: book-store-pod
+spec:
+  containers:
+  - name: book-store-container
+    image: zengemily79/book_store:latest  # 使用指定的镜像
+    ports:
+    - containerPort: 5000  # 容器内部暴露的端口
+

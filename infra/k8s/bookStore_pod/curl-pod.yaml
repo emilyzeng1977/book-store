@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: curl-pod
+spec:
+  containers:
+  - name: curl-container
+    image: curlimages/curl:latest  # 使用支持 curl 的镜像
+    command: ["sleep", "3600"]  # 让 Pod 运行并保持长时间运行
