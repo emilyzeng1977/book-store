@@ -26,5 +26,9 @@ spec:
         - name: mongo-data
           mountPath: /data/db  # MongoDB 数据目录
       volumes:
+#      - name: mongo-data
+#        emptyDir: {}  # 使用空目录作为数据卷
       - name: mongo-data
-        emptyDir: {}  # 使用空目录作为数据卷
+        persistentVolumeClaim:
+          claimName: mongo-pvc
+

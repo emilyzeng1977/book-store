@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mongo-pv
+spec:
+  capacity:
+    storage: 1Gi  # Adjust the storage size as needed
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: /Users/tom/Study/data  # Local directory on the host
+  persistentVolumeReclaimPolicy: Retain
+  # 决定了当与 PV 绑定的 Persistent Volume Claim (PVC) 被删除时，这个 PV 应该如何处理
+  #  Retain（保留）：
+  #    当 PVC 被删除后，PV 仍然会保留在集群中，数据不会被删除。
+  #    此时，PV 变为一种“Released”的状态，但不会自动分配给新的 PVC。管理员可以手动进行清理或重新分配这个 PV。
+  #  Recycle（回收）：
+  #    当 PVC 被删除后，PV 中的数据会被简单地清理（通过 rm -rf /thevolume/* 等操作），然后 PV 会回到可用状态，可以再次被绑定给新的 PVC。
+  #    需要注意的是，这个选项现在已经被弃用（deprecate），在现代 Kubernetes 中通常不使用。
+  #  Delete（删除）：
+  #    当 PVC 被删除后，PV 及其相关的存储资源会被自动删除。例如，云提供商上的存储卷（如 AWS EBS，GCP Persistent Disk）会被实际删除，数据将不可恢复。
