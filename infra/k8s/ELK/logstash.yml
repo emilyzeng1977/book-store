@@ -1,0 +1,80 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: log-manual-pipeline
+data:
+  logstash.conf: |
+    input {
+      beats {
+        port => "5044"
+      }
+    }
+    filter {
+      if [message] =~ /^\{.*\}$/ {
+        json {
+          source => "message"
+        }
+      }
+      if [ClientHost] {
+        geoip {
+          source => "ClientHost"
+        }
+      }
+    }
+    output {
+      elasticsearch {
+        hosts => ["http://elasticsearch:9200"]
+        index => "%{[@metadata][beat]}-%{[@metadata][version]}-%{+YYYY.MM.dd}"
+      }
+      stdout {
+        codec => rubydebug
+      }
+    }
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: logstash-logging
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: log-manual
+  template:
+    metadata:
+      labels:
+        name: log-manual
+    spec:
+      hostname: log-manual
+      containers:
+      - name: logstash
+        ports:
+        - containerPort: 5044
+          name: filebeat
+        image: docker.elastic.co/logstash/logstash:7.10.0
+        volumeMounts:
+        - name: log-manual-pipeline
+          mountPath: /usr/share/logstash/pipeline/
+        command:
+        - logstash
+      volumes:
+      - name: log-manual-pipeline
+        configMap:
+          name: log-manual-pipeline
+          items:
+            - key: logstash.conf
+              path: logstash.conf
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: logstash-service
+spec:
+  ports:
+  - port: 5044
+    protocol: TCP
+    targetPort: 5044
+  selector:
+    name: log-manual
+  type: NodePort
