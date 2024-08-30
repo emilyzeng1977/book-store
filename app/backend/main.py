@@ -10,7 +10,7 @@ from pymongo import MongoClient
 app = Flask(__name__)
 CORS(app)
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 # Read environment variables with default values
 mongo_user = os.getenv("MONGO_USER", "tom")
@@ -122,6 +122,9 @@ def delete_book(book_id):
         return jsonify({'error': 'Book not found'}), 404
     return jsonify({'message': 'Book deleted'})
 
+# @app.before_request
+# def log_request_info():
+#     app.logger.info(f"Access log: IP {request.remote_addr} - Method {request.method} - Path {request.path}")
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0')
+    app.run(debug=True, host='0.0.0.0', port=5002)
