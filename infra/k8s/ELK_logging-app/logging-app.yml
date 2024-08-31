@@ -16,9 +16,6 @@ data:
     
     processors:
       - add_host_metadata
-    
-    # Enable debug logging to see detailed information in Filebeat logs
-#    logging.level: debug
 ---
 kind: Deployment
 apiVersion: apps/v1
@@ -36,21 +33,21 @@ spec:
     spec:
       hostname: logging-app-manual
       containers:
-        - name: beat-manual
-          image: docker.elastic.co/beats/filebeat:7.10.0
-          args: [
-            "-c", "/etc/filebeat/filebeat.yml",
-            "-e"      ]
-          volumeMounts:
-            - name: beat-manual-config
-              mountPath: /etc/filebeat/
-            - name: manual-log-directory
-              mountPath: /tmp/
-        - name: logging-app-manual
-          image: sladesoftware/log-application:latest
-          volumeMounts:
-            - name: manual-log-directory
-              mountPath: /tmp/
+      - name: beat-manual
+        image: docker.elastic.co/beats/filebeat:7.10.0
+        args: [
+          "-c", "/etc/filebeat/filebeat.yml",
+          "-e"      ]
+        volumeMounts:
+          - name: beat-manual-config
+            mountPath: /etc/filebeat/
+          - name: manual-log-directory
+            mountPath: /tmp/
+      - name: logging-app-manual
+        image: sladesoftware/log-application:latest
+        volumeMounts:
+          - name: manual-log-directory
+            mountPath: /tmp/
       volumes:
         - name: beat-manual-config
           configMap:

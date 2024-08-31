@@ -127,4 +127,4 @@ def delete_book(book_id):
 #     app.logger.info(f"Access log: IP {request.remote_addr} - Method {request.method} - Path {request.path}")
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5002)
+    app.run(debug=True, host='0.0.0.0', port=5000)

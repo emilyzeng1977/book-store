@@ -16,11 +16,6 @@ data:
           source => "message"
         }
       }
-      if [ClientHost] {
-        geoip {
-          source => "ClientHost"
-        }
-      }
     }
     output {
       elasticsearch {

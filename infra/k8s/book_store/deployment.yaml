@@ -20,4 +20,7 @@ spec:
         env:
         - name: MONGO_HOST
           value: "mongo-service"  # 替换为你 MongoDB 服务的名称
-
+        - name: MONGO_USER
+          value: "tom"
+        - name: MONGO_PASSWORD
+          value: "123456"
