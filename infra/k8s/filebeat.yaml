@@ -31,7 +31,7 @@ data:
     filebeat.inputs:
     - type: container
       paths:
-        - /var/lib/docker/containers/*/*.log
+        - /var/log/containers/bookstore-deployment-*.log
     output.logstash:
       hosts: ["logstash-service.default.svc.cluster.local:5044"]
 
