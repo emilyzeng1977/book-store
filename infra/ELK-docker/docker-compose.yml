@@ -7,6 +7,7 @@ services:
       - discovery.type=single-node
       - ES_JAVA_OPTS=-Xms1g -Xmx1g
       - bootstrap.memory_lock=true
+      - xpack.security.enabled=false # 禁用安全功能
     ulimits:
       memlock:
         soft: -1
