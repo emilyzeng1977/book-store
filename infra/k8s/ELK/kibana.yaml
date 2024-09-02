@@ -15,7 +15,7 @@ spec:
         app: kib-manual
     spec:
       containers:
-      - image: docker.elastic.co/kibana/kibana:7.10.0
+      - image: docker.elastic.co/kibana/kibana:8.7.0-arm64
         name: kibana
         ports:
         - containerPort: 5601

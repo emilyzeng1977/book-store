@@ -47,7 +47,7 @@ spec:
         ports:
         - containerPort: 5044
           name: filebeat
-        image: docker.elastic.co/logstash/logstash:7.10.0
+        image: docker.elastic.co/logstash/logstash:8.7.0-arm64
         volumeMounts:
         - name: log-manual-pipeline
           mountPath: /usr/share/logstash/pipeline/
