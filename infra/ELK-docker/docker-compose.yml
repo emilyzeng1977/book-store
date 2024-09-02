@@ -17,8 +17,6 @@ services:
       - "9200:9200"
     networks:
       - elk
-    depends_on:
-      - elasticsearch
 
   logstash:
     image: docker.elastic.co/logstash/logstash:7.10.0
