@@ -11,11 +11,11 @@ spec:
   selector:
     matchLabels:
       app: es-logging
-  strategy:
-    rollingUpdate:
-      maxSurge: 25%
-      maxUnavailable: 25%
-    type: RollingUpdate
+#  strategy:
+#    rollingUpdate:
+#      maxSurge: 25%
+#      maxUnavailable: 25%
+#    type: RollingUpdate
   template:
     metadata:
       labels:
@@ -29,9 +29,9 @@ spec:
         - containerPort: 9200
           name: http
           protocol: TCP
-        - containerPort: 9300
-          name: transport
-          protocol: TCP
+#        - containerPort: 9300
+#          name: transport
+#          protocol: TCP
         env:
         - name: discovery.type
           value: single-node
