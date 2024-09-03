@@ -35,6 +35,12 @@ spec:
         env:
         - name: discovery.type
           value: single-node
+        - name: ES_JAVA_OPTS
+          value: "-Xms1g -Xmx1g"
+        - name: bootstrap.memory_lock
+          value: "true"
+        - name: xpack.security.enabled
+          value: "false"
         volumeMounts:
         - name: elasticsearch-logging
           mountPath: /data
