@@ -13,9 +13,8 @@ data:
     
     output.logstash:
       hosts: ["logstash-service:5044"]
-    
-    processors:
-      - add_host_metadata
+#    processors:
+#      - add_host_metadata
 ---
 kind: Deployment
 apiVersion: apps/v1
