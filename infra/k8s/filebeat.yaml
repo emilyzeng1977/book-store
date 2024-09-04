@@ -33,7 +33,7 @@ data:
       paths:
         - /var/log/containers/bookstore-deployment-*.log
     output.logstash:
-      hosts: ["logstash-service:5044"]
+      hosts: ["logstash-service.default.svc.cluster.local:5044"]
 
     # 可选：设置日志级别
 #    logging.level: debug
