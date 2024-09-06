@@ -46,6 +46,17 @@ services:
     depends_on:
       - elasticsearch
 
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:8.7.0-arm64
+    container_name: filebeat
+    volumes:
+      - ./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml
+      - /tmp/demo.log:/tmp/demo.log
+    networks:
+      - elk
+    depends_on:
+      - logstash
+
 volumes:
   esdata:
     driver: local
