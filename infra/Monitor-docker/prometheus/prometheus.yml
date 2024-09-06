@@ -1,0 +1,7 @@
+global:
+  scrape_interval: 15s  # 每15秒抓取一次
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']  # 监控Prometheus自身
