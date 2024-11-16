@@ -1,22 +1,52 @@
+import logging
+import os
+import socket
+
+from bson.objectid import ObjectId
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from pymongo import MongoClient
-from bson.objectid import ObjectId
-import logging
 
 app = Flask(__name__)
 CORS(app)
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
+
+# Read environment variables with default values
+mongo_user = os.getenv("MONGO_USER", "tom")
+mongo_password = os.getenv("MONGO_PASSWORD", "123456")
+mongo_host = os.getenv("MONGO_HOST", "localhost")
+mongo_port = os.getenv("MONGO_PORT", "27017")
+mongo_db = os.getenv("MONGO_DB", "book_store")
+
+# Construct the MongoDB URI
+mongo_uri = f"mongodb://{mongo_user}:{mongo_password}@{mongo_host}:{mongo_port}/{mongo_db}"
 
 try:
-    client = MongoClient('mongodb://tom:123456@localhost:27017/book_store')
+    client = MongoClient(mongo_uri)
     db = client.book_store
     collection = db.books
     logging.info("Connected to MongoDB")
 except Exception as e:
     logging.error(f"Error connecting to MongoDB: {e}")
     raise
+
+
+# Greet method to return a greeting message along with the local IP
+@app.route('/greet', methods=['GET'])
+def greet():
+    # Get the 'name' parameter from the query string, default to 'World' if not provided
+    name = request.args.get('name', 'World')
+
+    # Retrieve the local machine's IP address
+    hostname = socket.gethostname()
+    local_ip = socket.gethostbyname(hostname)
+
+    # Create a greeting message that includes the local IP
+    greeting_message = f"Hello, {name}! This server's IP address is {local_ip}."
+
+    # Return the greeting message as a JSON response
+    return jsonify({'message': greeting_message})
 
 
 # Retrieve all books
@@ -92,6 +122,5 @@ def delete_book(book_id):
         return jsonify({'error': 'Book not found'}), 404
     return jsonify({'message': 'Book deleted'})
 
-
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0', port=5000)

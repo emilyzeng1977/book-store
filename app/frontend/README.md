@@ -7,6 +7,7 @@ Front End
 ### Command line
 
 ```
+cd app/frontend
 http-server -p 8082
 ```
 
