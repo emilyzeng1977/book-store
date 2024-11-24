@@ -17,4 +17,4 @@ COPY . .
 EXPOSE 5000
 
 # 设置容器启动时执行的命令
-CMD ["python", "main_db.py"]
+CMD ["python", "main_no_db.py"]
