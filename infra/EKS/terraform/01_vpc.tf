@@ -84,7 +84,7 @@ resource "aws_eip" "nat" {
 
 ### NAT Gateway：用于私有子网访问外网 ###
 resource "aws_nat_gateway" "main" {
-  allocation_id = aws_eip.nat[0].id                       # 使用上面创建的第一个弹性 IP
+  allocation_id = aws_eip.nat.id                          # 使用上面创建的第一个弹性 IP
   subnet_id     = aws_subnet.public_subnet[0].id          # 部署到第一个公有子网
 
   tags = {
