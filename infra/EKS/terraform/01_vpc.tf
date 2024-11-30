@@ -78,7 +78,7 @@ resource "aws_route_table_association" "public_association" {
 ### 弹性 IP (Elastic IP)：为 NAT Gateway 准备 ###
 resource "aws_eip" "nat" {
   tags = {
-    Name = "${var.project}-nat-eip-${count.index}"        # 为每个弹性 IP 命名
+    Name = "${var.project}-nat-eip"        # 为每个弹性 IP 命名
   }
 }
 
