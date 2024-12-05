@@ -1,3 +1,5 @@
+import socket
+
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 
@@ -11,6 +13,21 @@ books = [
     {'id': 3, 'title': 'The Great Gatsby', 'author': 'F. Scott Fitzgerald'}
 ]
 
+# Greet method to return a greeting message along with the local IP
+@app.route('/greet', methods=['GET'])
+def greet():
+    # Get the 'name' parameter from the query string, default to 'World' if not provided
+    name = request.args.get('name', 'World')
+
+    # Retrieve the local machine's IP address
+    hostname = socket.gethostname()
+    local_ip = socket.gethostbyname(hostname)
+
+    # Create a greeting message that includes the local IP
+    greeting_message = f"Hello, {name}! This server's IP address is {local_ip}."
+
+    # Return the greeting message as a JSON response
+    return jsonify({'message': greeting_message})
 
 # Retrieve all books, with optional filtering by author
 @app.route('/books', methods=['GET'])
@@ -63,6 +80,5 @@ def delete_book(book_id):
     books = [book for book in books if book['id'] != book_id]
     return jsonify({'message': 'Book deleted'})
 
-
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0')
+    app.run(debug=True, host='0.0.0.0', port=5000)
