@@ -1,26 +1,24 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: bookstore-deployment
+  name: book-store-no-db
+  labels:
+    app: book-store-no-db
 spec:
-  replicas: 1  # 部署一个 Pod 副本
+  replicas: 1
   selector:
     matchLabels:
-      app: bookstore
+      app: book-store-no-db
   template:
     metadata:
       labels:
-        app: bookstore
+        app: book-store-no-db
     spec:
       containers:
-      - name: bookstore-container
-        image: zengemily79/book_store_no_db:latest  # 使用指定的 bookstore 镜像
+      - name: book-store-no-db
+        image: zengemily79/book_store_no_db:latest
         ports:
-        - containerPort: 5000  # 容器内部暴露的端口
+        - containerPort: 5000
         env:
-        - name: MONGO_HOST
-          value: "mongo-service"  # 替换为你 MongoDB 服务的名称
-        - name: MONGO_USER
-          value: "tom"
-        - name: MONGO_PASSWORD
-          value: "123456"
+        - name: HELLO_SERVER
+          value: "hello"
