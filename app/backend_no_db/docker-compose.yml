@@ -1,0 +1,21 @@
+version: "3.5"
+
+services:
+  book_store_no_db:
+    image: zengemily79/book_store_no_db:latest
+    container_name: book_store_no_db
+    environment:
+      HELLO_SERVER: hello
+    ports:
+      - "0.0.0.0:5000:5000"
+    networks:
+      - book_store_no_db
+  hello:
+    image: zengemily79/hello:latest
+    container_name: hello
+    networks:
+      - book_store_no_db
+
+networks:
+  book_store_no_db:
+    name: book_store_no_db

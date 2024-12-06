@@ -1,4 +1,6 @@
 import socket
+import os
+import requests  # To make HTTP requests to other endpoints
 
 from flask import Flask, jsonify, request
 from flask_cors import CORS
@@ -79,6 +81,19 @@ def delete_book(book_id):
     global books
     books = [book for book in books if book['id'] != book_id]
     return jsonify({'message': 'Book deleted'})
+
+# New endpoint to call /hello from another service
+@app.route('/call-hello', methods=['GET'])
+def call_hello():
+    hello_server = os.getenv('HELLO_SERVER', 'hello')
+    # 构造 `hello_service_url`
+    hello_service_url = f'http://{hello_server}:5000/hello'
+    try:
+        response = requests.get(hello_service_url)
+        response.raise_for_status()
+        return jsonify({'message': 'Hello service response', 'data': response.json()})
+    except requests.exceptions.RequestException as e:
+        return jsonify({'message': 'Failed to call hello service', 'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
