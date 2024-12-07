@@ -22,3 +22,7 @@ spec:
         env:
         - name: HELLO_SERVER
           value: "hello"
+        - name: HELLO_PORT
+          value: "5000"
+        - name: HELLO_URI
+          value: "/api/hello"

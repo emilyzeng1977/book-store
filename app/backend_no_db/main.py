@@ -86,8 +86,11 @@ def delete_book(book_id):
 @app.route('/call-hello', methods=['GET'])
 def call_hello():
     hello_server = os.getenv('HELLO_SERVER', 'hello')
+    hello_port = os.getenv('HELLO_PORT', '5000')
+    hello_uri = os.getenv('HELLO_URI', 'hello')
+
     # 构造 `hello_service_url`
-    hello_service_url = f'http://{hello_server}:5000/hello'
+    hello_service_url = f'http://{hello_server}:{hello_port}/{hello_uri}'
     try:
         response = requests.get(hello_service_url)
         response.raise_for_status()
