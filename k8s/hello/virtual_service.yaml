@@ -19,3 +19,7 @@ spec:
         host: hello
         port:
           number: 5000  # 转发到目标服务的 5000 端口
+    retries:
+      attempts: 3               # 重试次数
+      perTryTimeout: 2s         # 每次重试的超时时间
+      retryOn: "5xx,connect-failure,refused-stream"  # 触发重试的条件

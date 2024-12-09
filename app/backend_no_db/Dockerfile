@@ -1,6 +1,9 @@
 # 使用官方 Python 3.12 基础镜像
 FROM python:3.12-slim
 
+# 更新包管理器并安装 curl
+RUN apt-get update && apt-get install -y curl && apt-get clean && rm -rf /var/lib/apt/lists/*
+
 # 设置工作目录
 WORKDIR /app
 
