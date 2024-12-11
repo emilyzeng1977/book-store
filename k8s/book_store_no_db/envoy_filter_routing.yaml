@@ -1,40 +1,23 @@
-apiVersion: networking.istio.io/v1alpha3
-kind: EnvoyFilter
-metadata:
-  name: dynamic-host-routing
-  namespace: istio-system # 根据实际命名空间修改
-spec:
-  workloadSelector:
-    labels:
-      app: book-store-no-db
-  configPatches:
-    - applyTo: HTTP_FILTER
-      match:
-        context: SIDECAR_INBOUND # 作用于服务入口流量
-      patch:
-        operation: INSERT_BEFORE
-        value:
-          name: envoy.filters.http.lua
-          typed_config:
-            "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.Lua
-            inline_code: |
-              function envoy_on_request(request_handle)
-                -- 获取 header 中的 'branch' 参数值
-                local branch_value = request_handle:headers():get("branch")
-
-                -- 默认 host 设置
-                local new_host
-                if branch_value == nil or branch_value == "" then
-                  -- 当 branch 不存在或为空时，使用默认 host
-                  new_host = "hello"
-                else
-                  -- 根据 branch 设置动态 host
-                  new_host = "hello-" .. branch_value
-                end
-
-                -- 替换目标主机
-                request_handle:headers():replace(":authority", new_host)
-                request_handle:headers():replace("host", new_host)
-                request_handle:logInfo("branch header: " .. (branch_value or "nil"))
-                request_handle:logInfo("new host: " .. new_host)
-              end
+#apiVersion: networking.istio.io/v1alpha3
+#kind: EnvoyFilter
+#metadata:
+#  name: dynamic-host-routing
+#  namespace: istio-system
+#spec:
+#  workloadSelector:
+#    labels:
+#      app: book-store-no-db
+#  configPatches:
+#    - applyTo: HTTP_FILTER
+#      match:
+#        context: SIDECAR_INBOUND
+#      patch:
+#        operation: INSERT_BEFORE
+#        value:
+#          name: envoy.filters.http.lua
+#          typed_config:
+#            "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.Lua
+#            inline_code: |
+#              function envoy_on_request(request_handle)
+#                request_handle:logInfo("new host ?????? ")
+#              end

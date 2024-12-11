@@ -1,25 +1,25 @@
-#apiVersion: networking.istio.io/v1beta1
-#kind: VirtualService
-#metadata:
-#  name: hello-service
-#spec:
-#  hosts:
-#  - hello
-#  gateways:
-#  - mesh
-#  http:
-#  - match:
-#    - port: 5000  # 匹配来自 5000 端口的请求
-#      uri:
-#        prefix: /api/hello
-#    rewrite:
-#      uri: /hello
-#    route:
-#    - destination:
-#        host: hello
-#        port:
-#          number: 5000  # 转发到目标服务的 5000 端口
-#    retries:
-#      attempts: 3               # 重试次数
-#      perTryTimeout: 2s         # 每次重试的超时时间
-#      retryOn: "5xx,connect-failure,refused-stream"  # 触发重试的条件
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: hello-service
+spec:
+  hosts:
+  - hello
+  gateways:
+  - mesh
+  http:
+  - match:
+    - port: 5000  # 匹配来自 5000 端口的请求
+      uri:
+        prefix: /api/hello
+    rewrite:
+      uri: /hello
+    route:
+    - destination:
+        host: hello
+        port:
+          number: 5000  # 转发到目标服务的 5000 端口
+    retries:
+      attempts: 3               # 重试次数
+      perTryTimeout: 2s         # 每次重试的超时时间
+      retryOn: "5xx,connect-failure,refused-stream"  # 触发重试的条件
