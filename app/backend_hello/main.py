@@ -8,7 +8,10 @@ def hello_world():
     # 获取服务器的主机名
     server_name = socket.gethostname()
     # 获取服务器的 IP 地址
-    server_ip = socket.gethostbyname(server_name)
+    try:
+        server_ip = socket.gethostbyname(server_name)
+    except socket.gaierror:
+        server_ip = "127.0.0.1"  # 默认值
     return jsonify({
         "message": "Hello, World!",
         "from": {
