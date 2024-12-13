@@ -89,8 +89,14 @@ def call_hello():
     hello_port = os.getenv('HELLO_PORT', '5000')
     hello_uri = os.getenv('HELLO_URI', 'hello')
 
-    # 构造 `hello_service_url`
+    # 获取请求中的 error_host_name 参数
+    error_host_name = request.args.get('error_host_name')
+
+    # 构造 hello 服务的 URL，只有当 error_host_name 不为空时才附加该参数
     hello_service_url = f'http://{hello_server}:{hello_port}/{hello_uri}'
+    if error_host_name:
+        hello_service_url += f'?error_host_name={error_host_name}'
+
     try:
         response = requests.get(hello_service_url)
         response.raise_for_status()
