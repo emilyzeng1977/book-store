@@ -28,5 +28,11 @@ def hello_world():
         }
     })
 
+@app.route('/healthz', methods=['GET'])
+def health_check():
+    # 这里可以添加你想要的健康检查逻辑
+    # 例如，检查数据库连接或其他依赖服务是否可用
+    return jsonify({"status": "ok"}), 200
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
