@@ -100,8 +100,17 @@ def call_hello():
     try:
         response = requests.get(hello_service_url)
         response.raise_for_status()
+
+        # 将请求头添加到响应头
+        for header, value in request.headers.items():
+            response.headers[header] = value
+
         return jsonify({'message': 'Hello service response', 'data': response.json()})
     except requests.exceptions.RequestException as e:
+        # 将请求头添加到响应头
+        for header, value in request.headers.items():
+            response.headers[header] = value
+
         return jsonify({'message': 'Failed to call hello service', 'error': str(e)}), 500
 
 @app.route('/healthz', methods=['GET'])
@@ -111,4 +120,4 @@ def health_check():
     return jsonify({"status": "ok"}), 200
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0', port=5001)
