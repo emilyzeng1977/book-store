@@ -1,4 +1,3 @@
-import socket
 import os
 import requests  # To make HTTP requests to other endpoints
 
@@ -15,21 +14,16 @@ books = [
     {'id': 3, 'title': 'The Great Gatsby', 'author': 'F. Scott Fitzgerald'}
 ]
 
-# Greet method to return a greeting message along with the local IP
 @app.route('/greet', methods=['GET'])
 def greet():
-    # Get the 'name' parameter from the query string, default to 'World' if not provided
-    name = request.args.get('name', 'World')
 
-    # Retrieve the local machine's IP address
-    hostname = socket.gethostname()
-    local_ip = socket.gethostbyname(hostname)
+    # 将请求头添加到响应头
+    response = jsonify({'message': 'hello world'})
+    for header, value in request.headers.items():
+        response.headers[header] = value
 
-    # Create a greeting message that includes the local IP
-    greeting_message = f"Hello, {name}! This server's IP address is {local_ip}."
-
-    # Return the greeting message as a JSON response
-    return jsonify({'message': greeting_message})
+    # 返回包含问候信息的 JSON 响应
+    return response
 
 # Retrieve all books, with optional filtering by author
 @app.route('/books', methods=['GET'])
@@ -85,24 +79,44 @@ def delete_book(book_id):
 # New endpoint to call /hello from another service
 @app.route('/call-hello', methods=['GET'])
 def call_hello():
-    hello_server = os.getenv('HELLO_SERVER', 'hello')
+    # 读取环境变量
+    hello_server = os.getenv('HELLO_SERVER', 'host.docker.internal')
     hello_port = os.getenv('HELLO_PORT', '5000')
     hello_uri = os.getenv('HELLO_URI', 'hello')
 
-    # 获取请求中的 error_host_name 参数
+    # 获取查询参数
     error_host_name = request.args.get('error_host_name')
 
-    # 构造 hello 服务的 URL，只有当 error_host_name 不为空时才附加该参数
-    hello_service_url = f'http://{hello_server}:{hello_port}/{hello_uri}'
+    # 构造 hello 服务的 URL
+    hello_service_url = f"http://{hello_server}:{hello_port}/{hello_uri}"
     if error_host_name:
-        hello_service_url += f'?error_host_name={error_host_name}'
+        hello_service_url += f"?error_host_name={error_host_name}"
 
     try:
-        response = requests.get(hello_service_url)
-        response.raise_for_status()
-        return jsonify({'message': 'Hello service response', 'data': response.json()})
+        # 发起 HTTP 请求
+        response = requests.get(hello_service_url, timeout=5)
+        response.raise_for_status()  # 检查响应状态码
+
+        # 创建返回的 Flask 响应
+        flask_response = jsonify(response.json())
+
+        # 如果响应中包含 traceparent，将其加入到当前响应的 headers
+        traceparent = response.headers.get('traceparent')
+        if traceparent:
+            flask_response.headers['traceparent'] = traceparent
+
+        return flask_response
+
+    except requests.exceptions.Timeout:
+        flask_response = jsonify({'message': 'Request to hello service timed out'})
+        flask_response.headers.update(request.headers)
+        return flask_response, 504
+
     except requests.exceptions.RequestException as e:
-        return jsonify({'message': 'Failed to call hello service', 'error': str(e)}), 500
+        flask_response = jsonify({'message': 'Failed to call hello service', 'error': str(e)})
+        flask_response.headers.update(request.headers)
+        return flask_response, 500
+
 
 @app.route('/healthz', methods=['GET'])
 def health_check():
