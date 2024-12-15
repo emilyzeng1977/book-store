@@ -96,7 +96,16 @@ def call_hello():
         # 发起 HTTP 请求
         response = requests.get(hello_service_url, timeout=5)
         response.raise_for_status()  # 检查响应状态码
-        return response
+
+        # 创建返回的 Flask 响应
+        flask_response = jsonify(response.json())
+
+        # 如果响应中包含 traceparent，将其加入到当前响应的 headers
+        traceparent = response.headers.get('traceparent')
+        if traceparent:
+            flask_response.headers['traceparent'] = traceparent
+
+        return flask_response
 
     except requests.exceptions.Timeout:
         flask_response = jsonify({'message': 'Request to hello service timed out'})
