@@ -1,7 +1,19 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, g
 import socket
 
 app = Flask(__name__)
+
+@app.before_request
+def store_traceparent():
+    # Store traceparent in a global variable for use in response modification
+    g.traceparent = request.headers.get("traceparent")
+
+@app.after_request
+def add_traceparent_header(response):
+    # Add traceparent to the response headers if it exists
+    if hasattr(g, 'traceparent') and g.traceparent:
+        response.headers["traceparent"] = g.traceparent
+    return response
 
 @app.route('/hello', methods=['GET'])
 def hello_world():

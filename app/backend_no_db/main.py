@@ -1,8 +1,7 @@
 import os
 import requests  # To make HTTP requests to other endpoints
 
-from flask import Flask, jsonify, request, g
-from opentelemetry.trace import get_current_span
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -14,23 +13,6 @@ books = [
     {'id': 2, 'title': 'To Kill a Mockingbird', 'author': 'Harper Lee'},
     {'id': 3, 'title': 'The Great Gatsby', 'author': 'F. Scott Fitzgerald'}
 ]
-
-@app.before_request
-def before_request():
-    # 获取当前 span 的 traceID
-    span = get_current_span()
-    if span and span.get_span_context().is_valid:
-        g.trace_id = span.get_span_context().trace_id
-    else:
-        g.trace_id = None
-
-@app.after_request
-def add_trace_id_header(response):
-    # 将 traceID 添加到响应 Header
-    if hasattr(g, 'trace_id') and g.trace_id is not None:
-        trace_id_hex = format(g.trace_id, '032x')  # 转为 16 进制
-        response.headers["X-Trace-ID"] = trace_id_hex
-    return response
 
 @app.route('/greet', methods=['GET'])
 def greet():
