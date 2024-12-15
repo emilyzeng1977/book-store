@@ -11,6 +11,7 @@ def hello_world():
 
     # 获取请求参数 error_host_name
     error_host_name = request.args.get('error_host_name')
+    traceparent = request.headers.get("traceparent")
     trace_id = request.headers.get("x-b3-traceid")
     span_id = request.headers.get("x-b3-spanid")
 
@@ -28,7 +29,8 @@ def hello_world():
             "server_name": server_name,
             "server_ip": server_ip,
             "trace_id": trace_id,
-            "span_id": span_id
+            "span_id": span_id,
+            "traceparent": traceparent
         }
     })
 
