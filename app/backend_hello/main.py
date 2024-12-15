@@ -3,17 +3,17 @@ import socket
 
 app = Flask(__name__)
 
-@app.before_request
-def store_traceparent():
-    # Store traceparent in a global variable for use in response modification
-    g.traceparent = request.headers.get("traceparent")
-
-@app.after_request
-def add_traceparent_header(response):
-    # Add traceparent to the response headers if it exists
-    if hasattr(g, 'traceparent') and g.traceparent:
-        response.headers["traceparent"] = g.traceparent
-    return response
+# @app.before_request
+# def store_traceparent():
+#     # Store traceparent in a global variable for use in response modification
+#     g.traceparent = request.headers.get("traceparent")
+#
+# @app.after_request
+# def add_traceparent_header(response):
+#     # Add traceparent to the response headers if it exists
+#     if hasattr(g, 'traceparent') and g.traceparent:
+#         response.headers["traceparent"] = g.traceparent
+#     return response
 
 @app.route('/hello', methods=['GET'])
 def hello_world():
@@ -24,8 +24,6 @@ def hello_world():
     # 获取请求参数 error_host_name
     error_host_name = request.args.get('error_host_name')
     traceparent = request.headers.get("traceparent")
-    trace_id = request.headers.get("x-b3-traceid")
-    span_id = request.headers.get("x-b3-spanid")
 
     # 如果 error_host_name 与 server_name 相同，抛出 500 错误
     if error_host_name and error_host_name == server_name:
@@ -35,16 +33,22 @@ def hello_world():
         server_ip = socket.gethostbyname(server_name)
     except socket.gaierror:
         server_ip = "127.0.0.1"  # 默认值
-    return jsonify({
+
+    # 创建响应
+    response = jsonify({
         "message": "Hello, World!",
         "from": {
             "server_name": server_name,
             "server_ip": server_ip,
-            "trace_id": trace_id,
-            "span_id": span_id,
             "traceparent": traceparent
         }
     })
+
+    # 将 traceparent 放到响应头
+    if traceparent:
+        response.headers["traceparent"] = traceparent
+
+    return response
 
 @app.route('/healthz', methods=['GET'])
 def health_check():
