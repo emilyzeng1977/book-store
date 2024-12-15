@@ -11,6 +11,8 @@ def hello_world():
 
     # 获取请求参数 error_host_name
     error_host_name = request.args.get('error_host_name')
+    trace_id = request.headers.get("x-b3-traceid")
+    span_id = request.headers.get("x-b3-spanid")
 
     # 如果 error_host_name 与 server_name 相同，抛出 500 错误
     if error_host_name and error_host_name == server_name:
@@ -24,7 +26,9 @@ def hello_world():
         "message": "Hello, World!",
         "from": {
             "server_name": server_name,
-            "server_ip": server_ip
+            "server_ip": server_ip,
+            "trace_id": trace_id,
+            "span_id": span_id
         }
     })
 

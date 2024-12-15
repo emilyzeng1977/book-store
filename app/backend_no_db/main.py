@@ -1,8 +1,8 @@
-import socket
 import os
 import requests  # To make HTTP requests to other endpoints
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, g
+from opentelemetry.trace import get_current_span
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -14,6 +14,23 @@ books = [
     {'id': 2, 'title': 'To Kill a Mockingbird', 'author': 'Harper Lee'},
     {'id': 3, 'title': 'The Great Gatsby', 'author': 'F. Scott Fitzgerald'}
 ]
+
+@app.before_request
+def before_request():
+    # 获取当前 span 的 traceID
+    span = get_current_span()
+    if span and span.get_span_context().is_valid:
+        g.trace_id = span.get_span_context().trace_id
+    else:
+        g.trace_id = None
+
+@app.after_request
+def add_trace_id_header(response):
+    # 将 traceID 添加到响应 Header
+    if hasattr(g, 'trace_id') and g.trace_id is not None:
+        trace_id_hex = format(g.trace_id, '032x')  # 转为 16 进制
+        response.headers["X-Trace-ID"] = trace_id_hex
+    return response
 
 @app.route('/greet', methods=['GET'])
 def greet():
@@ -80,35 +97,39 @@ def delete_book(book_id):
 # New endpoint to call /hello from another service
 @app.route('/call-hello', methods=['GET'])
 def call_hello():
-    hello_server = os.getenv('HELLO_SERVER', 'hello')
+    # 读取环境变量
     hello_server = os.getenv('HELLO_SERVER', 'host.docker.internal')
     hello_port = os.getenv('HELLO_PORT', '5000')
     hello_uri = os.getenv('HELLO_URI', 'hello')
 
-    # 获取请求中的 error_host_name 参数
+    # 获取查询参数
     error_host_name = request.args.get('error_host_name')
 
-    # 构造 hello 服务的 URL，只有当 error_host_name 不为空时才附加该参数
-    hello_service_url = f'http://{hello_server}:{hello_port}/{hello_uri}'
+    # 构造 hello 服务的 URL
+    hello_service_url = f"http://{hello_server}:{hello_port}/{hello_uri}"
     if error_host_name:
-        hello_service_url += f'?error_host_name={error_host_name}'
+        hello_service_url += f"?error_host_name={error_host_name}"
 
     try:
-        # 添加请求超时限制
+        # 发起 HTTP 请求
         response = requests.get(hello_service_url, timeout=5)
-        response.raise_for_status()  # 如果响应状态码不是 2xx，将抛出异常
+        response.raise_for_status()  # 检查响应状态码
 
-        # 将请求头添加到响应头
-        for header, value in request.headers.items():
-            response.headers[header] = value
-
-        return jsonify({'message': 'Hello service response', 'data': response.json()})
+        # 构造响应对象并附加请求头
+        flask_response = jsonify({'message': 'Hello service response', 'data': response.json()})
+        flask_response.headers.update(request.headers)
+        return flask_response
 
     except requests.exceptions.Timeout:
-        return jsonify({'message': 'Request to hello service timed out'}), 504
+        flask_response = jsonify({'message': 'Request to hello service timed out'})
+        flask_response.headers.update(request.headers)
+        return flask_response, 504
 
     except requests.exceptions.RequestException as e:
-        return jsonify({'message': 'Failed to call hello service', 'error': str(e)}), 500
+        flask_response = jsonify({'message': 'Failed to call hello service', 'error': str(e)})
+        flask_response.headers.update(request.headers)
+        return flask_response, 500
+
 
 @app.route('/healthz', methods=['GET'])
 def health_check():
