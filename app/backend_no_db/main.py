@@ -15,21 +15,16 @@ books = [
     {'id': 3, 'title': 'The Great Gatsby', 'author': 'F. Scott Fitzgerald'}
 ]
 
-# Greet method to return a greeting message along with the local IP
 @app.route('/greet', methods=['GET'])
 def greet():
-    # Get the 'name' parameter from the query string, default to 'World' if not provided
-    name = request.args.get('name', 'World')
 
-    # Retrieve the local machine's IP address
-    hostname = socket.gethostname()
-    local_ip = socket.gethostbyname(hostname)
+    # 将请求头添加到响应头
+    response = jsonify({'message': 'hello world'})
+    for header, value in request.headers.items():
+        response.headers[header] = value
 
-    # Create a greeting message that includes the local IP
-    greeting_message = f"Hello, {name}! This server's IP address is {local_ip}."
-
-    # Return the greeting message as a JSON response
-    return jsonify({'message': greeting_message})
+    # 返回包含问候信息的 JSON 响应
+    return response
 
 # Retrieve all books, with optional filtering by author
 @app.route('/books', methods=['GET'])
@@ -86,6 +81,7 @@ def delete_book(book_id):
 @app.route('/call-hello', methods=['GET'])
 def call_hello():
     hello_server = os.getenv('HELLO_SERVER', 'hello')
+    hello_server = os.getenv('HELLO_SERVER', 'host.docker.internal')
     hello_port = os.getenv('HELLO_PORT', '5000')
     hello_uri = os.getenv('HELLO_URI', 'hello')
 
@@ -98,19 +94,20 @@ def call_hello():
         hello_service_url += f'?error_host_name={error_host_name}'
 
     try:
-        response = requests.get(hello_service_url)
-        response.raise_for_status()
+        # 添加请求超时限制
+        response = requests.get(hello_service_url, timeout=5)
+        response.raise_for_status()  # 如果响应状态码不是 2xx，将抛出异常
 
         # 将请求头添加到响应头
         for header, value in request.headers.items():
             response.headers[header] = value
 
         return jsonify({'message': 'Hello service response', 'data': response.json()})
-    except requests.exceptions.RequestException as e:
-        # 将请求头添加到响应头
-        for header, value in request.headers.items():
-            response.headers[header] = value
 
+    except requests.exceptions.Timeout:
+        return jsonify({'message': 'Request to hello service timed out'}), 504
+
+    except requests.exceptions.RequestException as e:
         return jsonify({'message': 'Failed to call hello service', 'error': str(e)}), 500
 
 @app.route('/healthz', methods=['GET'])
@@ -120,4 +117,4 @@ def health_check():
     return jsonify({"status": "ok"}), 200
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5001)
+    app.run(debug=True, host='0.0.0.0', port=5000)
