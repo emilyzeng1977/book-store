@@ -3,23 +3,10 @@ import socket
 
 app = Flask(__name__)
 
-# @app.before_request
-# def store_traceparent():
-#     # Store traceparent in a global variable for use in response modification
-#     g.traceparent = request.headers.get("traceparent")
-#
-# @app.after_request
-# def add_traceparent_header(response):
-#     # Add traceparent to the response headers if it exists
-#     if hasattr(g, 'traceparent') and g.traceparent:
-#         response.headers["traceparent"] = g.traceparent
-#     return response
-
 @app.route('/hello', methods=['GET'])
 def hello_world():
     # 获取服务器的主机名
     server_name = socket.gethostname()
-    # 获取服务器的 IP 地址
 
     # 获取请求参数 error_host_name
     error_host_name = request.args.get('error_host_name')
@@ -29,6 +16,7 @@ def hello_world():
     if error_host_name and error_host_name == server_name:
         return jsonify({"error": "Server name matches error_host_name, throwing 500 error."}), 500
 
+    # 获取服务器的 IP 地址
     try:
         server_ip = socket.gethostbyname(server_name)
     except socket.gaierror:
@@ -37,7 +25,7 @@ def hello_world():
     # 创建响应
     response = jsonify({
         "message": "Hello, World!",
-        "from": {
+        "from hello sever": {
             "server_name": server_name,
             "server_ip": server_ip,
             "traceparent": traceparent
