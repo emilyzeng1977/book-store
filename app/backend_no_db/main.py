@@ -1,5 +1,6 @@
 import os
 import requests  # To make HTTP requests to other endpoints
+import socket
 
 from flask import Flask, jsonify, request
 from flask_cors import CORS
@@ -84,6 +85,15 @@ def call_hello():
     hello_port = os.getenv('HELLO_PORT', '5000')
     hello_uri = os.getenv('HELLO_URI', 'hello')
 
+    # 获取服务器的主机名
+    server_name = socket.gethostname()
+
+    # 获取服务器的 IP 地址
+    try:
+        server_ip = socket.gethostbyname(server_name)
+    except socket.gaierror:
+        server_ip = "127.0.0.1"  # 默认值
+
     # 获取查询参数
     error_host_name = request.args.get('error_host_name')
 
@@ -98,7 +108,13 @@ def call_hello():
         response.raise_for_status()  # 检查响应状态码
 
         # 创建返回的 Flask 响应
-        flask_response = jsonify(response.json())
+        # 创建返回的 Flask 响应
+        flask_response = jsonify({
+            "message": "Called Hello Service",
+            "server_name": server_name,
+            "server_ip": server_ip,
+            "response from hello server": response.json()
+        })
 
         # 如果响应中包含 traceparent，将其加入到当前响应的 headers
         traceparent = response.headers.get('traceparent')
