@@ -83,7 +83,9 @@ def call_hello():
     # 读取环境变量
     hello_server = os.getenv('HELLO_SERVER', 'host.docker.internal')
     hello_port = os.getenv('HELLO_PORT', '5000')
-    hello_uri = os.getenv('HELLO_URI', 'hello')
+
+    # hello_path
+    hello_path = request.args.get('hello_path') or 'hello'
 
     # 获取服务器的主机名
     server_name = socket.gethostname()
@@ -98,7 +100,7 @@ def call_hello():
     error_host_name = request.args.get('error_host_name')
 
     # 构造 hello 服务的 URL
-    hello_service_url = f"http://{hello_server}:{hello_port}/{hello_uri}"
+    hello_service_url = f"http://{hello_server}:{hello_port}/{hello_path}"
     if error_host_name:
         hello_service_url += f"?error_host_name={error_host_name}"
 
