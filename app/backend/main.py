@@ -1,4 +1,4 @@
-import logging
+# import logging
 import os
 import requests  # To make HTTP requests to other endpoints
 
@@ -12,7 +12,7 @@ from pymongo import MongoClient
 app = Flask(__name__)
 CORS(app)
 
-logging.basicConfig(level=logging.INFO)
+# logging.basicConfig(level=logging.INFO)
 
 # Read environment variables with default values
 mongo_user = os.getenv("MONGO_USER", "tom")
@@ -28,9 +28,9 @@ try:
     client = MongoClient(mongo_uri)
     db = client.book_store
     collection = db.books
-    logging.info("Connected to MongoDB")
+    # logging.info("Connected to MongoDB")
 except Exception as e:
-    logging.error(f"Error connecting to MongoDB: {e}")
+    # logging.error(f"Error connecting to MongoDB: {e}")
     raise
 
 
