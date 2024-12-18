@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongo
+spec:
+  replicas: 1  # 部署一个 MongoDB 副本
+  selector:
+    matchLabels:
+      app: mongo
+  template:
+    metadata:
+      labels:
+        app: mongo
+    spec:
+      containers:
+      - name: mongo
+        image: mongo:latest  # 使用最新的 MongoDB 镜像
+        ports:
+        - containerPort: 27017  # MongoDB 默认端口
+        env:
+        - name: MONGO_INITDB_ROOT_USERNAME
+          value: "root"  # 替换为你想要的用户名
+        - name: MONGO_INITDB_ROOT_PASSWORD
+          value: "123456"  # 替换为你想要的密码
+        volumeMounts:
+        - name: mongo-data
+          mountPath: /data/db  # MongoDB 数据目录
+      volumes:
+      - name: mongo-data
+        persistentVolumeClaim:
+          claimName: mongo-pvc
+
