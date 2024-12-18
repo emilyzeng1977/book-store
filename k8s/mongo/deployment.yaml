@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: mongo-deployment
+  name: mongo
 spec:
   replicas: 1  # 部署一个 MongoDB 副本
   selector:
@@ -13,7 +13,7 @@ spec:
         app: mongo
     spec:
       containers:
-      - name: mongo-container
+      - name: mongo
         image: mongo:latest  # 使用最新的 MongoDB 镜像
         ports:
         - containerPort: 27017  # MongoDB 默认端口
@@ -26,8 +26,6 @@ spec:
         - name: mongo-data
           mountPath: /data/db  # MongoDB 数据目录
       volumes:
-#      - name: mongo-data
-#        emptyDir: {}  # 使用空目录作为数据卷
       - name: mongo-data
         persistentVolumeClaim:
           claimName: mongo-pvc

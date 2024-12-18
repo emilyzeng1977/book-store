@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: bookstore-deployment
+  name: bookstore
 spec:
   replicas: 1  # 部署一个 Pod 副本
   selector:
@@ -13,7 +13,7 @@ spec:
         app: bookstore
     spec:
       containers:
-      - name: bookstore-container
+      - name: bookstore
         image: zengemily79/book_store:latest  # 使用指定的 bookstore 镜像
         ports:
         - containerPort: 5000  # 容器内部暴露的端口
@@ -24,3 +24,5 @@ spec:
           value: "tom"
         - name: MONGO_PASSWORD
           value: "123456"
+        - name: MONGO_DB
+          value: "book_store"
