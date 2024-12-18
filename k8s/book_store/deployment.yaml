@@ -19,7 +19,7 @@ spec:
         - containerPort: 5000  # 容器内部暴露的端口
         env:
         - name: MONGO_HOST
-          value: "mongo-service"  # 替换为你 MongoDB 服务的名称
+          value: "mongo"  # 替换为你 MongoDB 服务的名称
         - name: MONGO_USER
           value: "tom"
         - name: MONGO_PASSWORD
