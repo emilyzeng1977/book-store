@@ -1,4 +1,4 @@
-# import logging
+import logging
 import os
 import requests  # To make HTTP requests to other endpoints
 
@@ -14,12 +14,17 @@ CORS(app)
 
 # logging.basicConfig(level=logging.INFO)
 
-# Read environment variables with default values
-mongo_user = os.getenv("MONGO_USER", "tom")
-mongo_password = os.getenv("MONGO_PASSWORD", "123456")
-mongo_host = os.getenv("MONGO_HOST", "localhost")
-mongo_port = os.getenv("MONGO_PORT", "27017")
-mongo_db = os.getenv("MONGO_DB", "book_store")
+def get_env_variable(key, default_value):
+    """Get an environment variable or return the default value if it's not set or empty."""
+    value = os.getenv(key)
+    return value if value else default_value
+
+# Read environment variables with robust defaults
+mongo_user = get_env_variable("MONGO_USER", "tom")
+mongo_password = get_env_variable("MONGO_PASSWORD", "123456")
+mongo_host = get_env_variable("MONGO_HOST", "mongo")
+mongo_port = int(get_env_variable("MONGO_PORT", "27017"))  # Ensure it's an integer
+mongo_db = get_env_variable("MONGO_DB", "book_store")
 
 # Construct the MongoDB URI
 mongo_uri = f"mongodb://{mongo_user}:{mongo_password}@{mongo_host}:{mongo_port}/{mongo_db}"
@@ -28,9 +33,9 @@ try:
     client = MongoClient(mongo_uri)
     db = client.book_store
     collection = db.books
-    # logging.info("Connected to MongoDB")
+    logging.info("Connected to MongoDB")
 except Exception as e:
-    # logging.error(f"Error connecting to MongoDB: {e}")
+    logging.error(f"Error connecting to MongoDB: {e}")
     raise
 
 
@@ -128,8 +133,8 @@ def delete_book(book_id):
 @app.route('/call-hello', methods=['GET'])
 def call_hello():
     # 读取环境变量
-    hello_server = os.getenv('HELLO_SERVER', 'host.docker.internal')
-    hello_port = os.getenv('HELLO_PORT', '5000')
+    hello_server = get_env_variable('HELLO_SERVER', 'host.docker.internal')
+    hello_port = get_env_variable('HELLO_PORT', '5000')
 
     # hello_path
     hello_path = request.args.get('hello_path') or 'hello'
