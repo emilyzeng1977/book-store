@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: book-store-price-dev
+spec:
+  selector:
+    app: book-store-price-dev
+  ports:
+    - protocol: TCP
+      port: 5000
+      targetPort: 5000
+  type: ClusterIP  # 设置为 ClusterIP 以仅在集群内部暴露

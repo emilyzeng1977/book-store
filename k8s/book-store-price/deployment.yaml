@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: book-store-price
+  labels:
+    app: book-store-price
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: book-store-price
+  template:
+    metadata:
+      labels:
+        app: book-store-price
+    spec:
+      containers:
+      - name: book-store-price
+        image: zengemily79/book-store-price:latest
+        ports:
+        - containerPort: 5000  # 容器内部暴露的端口
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 5000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 5000
+          initialDelaySeconds: 5
+          periodSeconds: 10

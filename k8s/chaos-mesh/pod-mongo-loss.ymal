@@ -1,0 +1,14 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: network-mongo-loss
+spec:
+  action: loss
+  mode: one
+  selector:
+    labelSelectors:
+      app: mongo
+  loss:
+    loss: "50"
+    correlation: "100"
+  duration: "300s"

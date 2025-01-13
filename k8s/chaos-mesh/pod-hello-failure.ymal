@@ -1,0 +1,11 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: PodChaos
+metadata:
+  name: pod-hello-failure
+spec:
+  action: pod-failure
+  mode: one
+  duration: "300s"
+  selector:
+    labelSelectors:
+      app: hello

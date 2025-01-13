@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: book-store
+  labels:
+    app: book-store
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: book-store
+  template:
+    metadata:
+      labels:
+        app: book-store
+    spec:
+      containers:
+      - name: book-store
+        image: zengemily79/book-store:latest
+        ports:
+        - containerPort: 5000  # 容器内部暴露的端口
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 5000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 5000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        env:
+        - name: MONGO_HOST
+          value: "mongo"
+        - name: MONGO_USER
+          value: "tom"
+        - name: MONGO_PASSWORD
+          value: "123456"
+        - name: MONGO_DB
+          value: "book-store"
+        - name: MONGO_PORT
+          value: "27017"
+        - name: PRICE_SERVER
+          value: "book-store-price"
+        - name: PRICE_PORT
+          value: "5000"
