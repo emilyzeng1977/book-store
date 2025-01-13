@@ -159,13 +159,16 @@ def call_price():
     except socket.gaierror:
         server_ip = "127.0.0.1"  # 默认值
 
+    # 获取 book_id 参数
+    book_id = request.args.get('book_id')  # 如果未提供 book_id，则返回 None
 
     # 构造 price 服务的 URL
     price_service_url = f"http://{price_server}:{price_port}/price"
+    params = {'book_id': book_id} if book_id else {}  # 仅在 book_id 存在时添加参数
 
     try:
         # 发起 HTTP 请求
-        response = requests.get(price_service_url, timeout=1)
+        response = requests.get(price_service_url, params=params, timeout=1)
         response.raise_for_status()  # 检查响应状态码
 
         # 创建返回的 Flask 响应

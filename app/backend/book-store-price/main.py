@@ -12,6 +12,13 @@ def price():
     book_id = request.args.get('book_id', 'unknown')  # 默认值为 "unknown"
     traceparent = request.headers.get("traceparent")
 
+    # 如果 book_id 是 -1，返回 500 错误
+    if book_id == "-1":
+        return jsonify({
+            "error": "Invalid book_id",
+            "message": "book_id cannot be -1"
+        }), 500
+
     # 确定 price 值
     price = "unknown" if book_id == "unknown" else "some_price_value"  # 替换为实际逻辑
 
