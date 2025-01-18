@@ -1,8 +1,10 @@
 from flask import Flask, jsonify, request, g
 import socket
+import timeout_decorator
 
 app = Flask(__name__)
 
+@timeout_decorator.timeout(2, use_signals=False)  # 超时设为1秒
 @app.route('/price', methods=['GET'])
 def price():
     # 获取服务器的主机名

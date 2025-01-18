@@ -144,7 +144,7 @@ def delete_book(book_id):
 
 # New endpoint to call price for a book from another service
 @app.route('/call-price', methods=['GET'])
-@timeout_decorator.timeout(1, use_signals=False)  # 超时设为1秒
+@timeout_decorator.timeout(2, use_signals=False)  # 超时设为1秒
 def call_price():
     # 读取环境变量
     price_server = get_env_variable('PRICE_SERVER', 'host.docker.internal')
@@ -174,7 +174,7 @@ def call_price():
         # 创建返回的 Flask 响应
         # 创建返回的 Flask 响应
         flask_response = jsonify({
-            "message": "Called price Service",
+            "message": "Call price Service",
             "server_name": server_name,
             "server_ip": server_ip,
             "response from price server": response.json()

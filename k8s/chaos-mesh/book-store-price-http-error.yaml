@@ -1,0 +1,15 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: HTTPChaos
+metadata:
+  name: book-store-price-http-error
+spec:
+  selector:
+    labelSelectors:
+      app: book-store-price
+  mode: one
+  target: Response
+  replace:
+    code: 500
+  method: GET
+  port: 5000
+  path: /price
