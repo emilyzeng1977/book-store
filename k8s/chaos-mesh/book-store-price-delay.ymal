@@ -1,15 +1,15 @@
 apiVersion: chaos-mesh.org/v1alpha1
 kind: NetworkChaos
 metadata:
-  name: network-hello-delay
+  name: network-book-store-price-delay
 spec:
   action: delay
   mode: one
   selector:
     labelSelectors:
-      app: hello
+      app: book-store-price
   delay:
-    latency: "3s"
-    correlation: "100"
+    latency: "5s"
+    correlation: "50"
     jitter: "90ms"
-  duration: "180s"
+  duration: "120s"

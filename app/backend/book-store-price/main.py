@@ -10,7 +10,8 @@ def price():
 
     # 获取请求参数 error_host_name
     book_id = request.args.get('book_id', 'unknown')  # 默认值为 "unknown"
-    traceparent = request.headers.get("traceparent")
+    traceparent = request.headers.get("traceparent") # OpenTelemetry
+    x_b3_traceId = request.headers.get("X-B3-TraceId") # Zipkin
 
     # 如果 book_id 是 -1，返回 500 错误
     if book_id == "-1":
@@ -36,13 +37,17 @@ def price():
             "price": price,
             "server_name": server_name,
             "server_ip": server_ip,
-            "traceparent": traceparent
+            "traceparent": traceparent,
+            "x_b3_traceId": x_b3_traceId
         }
     })
 
     # 将 traceparent 放到响应头
     if traceparent:
         response.headers["traceparent"] = traceparent
+
+    if x_b3_traceId:
+        response.headers["x_b3_traceId"] = x_b3_traceId
 
     return response
 
