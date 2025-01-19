@@ -5,8 +5,8 @@ metadata:
 spec:
   selector:
     labelSelectors:
-      app: book-store-price
-  mode: one
+      http: error
+  mode: all
   target: Response
   replace:
     code: 500
