@@ -1,21 +1,13 @@
 import logging
 import os
-import requests  # To make HTTP requests to other endpoints
-
 import socket
-import timeout_decorator
 
+import requests  # To make HTTP requests to other endpoints
+import timeout_decorator
 from bson.objectid import ObjectId
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from pymongo import MongoClient, errors
-
-from opentelemetry import trace
-from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor
-from opentelemetry.instrumentation.flask import FlaskInstrumentor
-from opentelemetry.sdk.resources import Resource, SERVICE_NAME
 
 app = Flask(__name__)
 CORS(app)
@@ -24,28 +16,6 @@ def get_env_variable(key, default_value):
     """Get an environment variable or return the default value if it's not set or empty."""
     value = os.getenv(key)
     return value if value else default_value
-
-otel_coolector_url = get_env_variable("OTEL_COLLECTOR_URL", "grpc://opentelemetry-collector.default.svc.cluster.local:4317")
-
-# 设置 OpenTelemetry 配置，指定服务名称
-service_name = "my-python-service"
-resource = Resource.create({SERVICE_NAME: service_name})
-
-# 创建 TracerProvider，并指定 Resource（服务名称）
-trace.set_tracer_provider(TracerProvider(resource=resource))
-
-# 获取 Tracer
-tracer = trace.get_tracer(__name__)
-
-# 配置 OTLP 导出器
-otlp_exporter = OTLPSpanExporter(endpoint=otel_coolector_url, insecure=True)
-
-# 配置 SpanProcessor 并添加到 TracerProvider
-span_processor = BatchSpanProcessor(otlp_exporter)
-trace.get_tracer_provider().add_span_processor(span_processor)
-
-# 自动化 Flask 监控
-FlaskInstrumentor().instrument_app(app)
 
 logging.basicConfig(level=logging.INFO)
 

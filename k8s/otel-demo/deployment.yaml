@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otel-demo
+  labels:
+    app: otel-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: otel-demo
+  template:
+    metadata:
+      labels:
+        app: otel-demo
+    spec:
+      containers:
+      - name: otel-demo
+        image: zengemily79/otel-demo:latest
+        ports:
+        - containerPort: 5000
+        env:
+        - name: OTEL_COLLECTOR_URL
+          value: "grpc://opentelemetry-collector.default.svc.cluster.local:4317"
