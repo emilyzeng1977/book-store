@@ -96,12 +96,13 @@ spec:
               containerPort: 4317
               protocol: TCP
           resources:
+            resources:
             limits:
-              cpu: "2"
-              memory: 4Gi
+              cpu: "0.5"      # 设置 CPU 限制为 0.5 个 CPU 核心
+              memory: 1Gi     # 设置内存限制为 1Gi
             requests:
-              cpu: 200m
-              memory: 400Mi
+                cpu: "0.1"      # 设置 CPU 请求为 0.1 个 CPU 核心
+                memory: 256Mi   # 设置内存请求为 256Mi
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
           volumeMounts:
