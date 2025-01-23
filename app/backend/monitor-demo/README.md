@@ -7,7 +7,7 @@ Back End
 ### Command line
 请切换到Backend目录下
 ```
-docker build -t zengemily79/otel-demo:latest .
+docker build -t zengemily79/monitor-demo:latest .
 ```
 运行docker-compose
 ```
@@ -21,6 +21,6 @@ lsof -i :<端口号>
 
 Push to docker-hub
 ```
-docker push zengemily79/otel-demo:latest
+docker push zengemily79/monitor-demo:latest
 ```
 

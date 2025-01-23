@@ -1,22 +1,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: otel-demo
+  name: monitor-demo
   labels:
-    app: otel-demo
+    app: monitor-demo
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: otel-demo
+      app: monitor-demo
   template:
     metadata:
       labels:
-        app: otel-demo
+        app: monitor-demo
     spec:
       containers:
-      - name: otel-demo
-        image: zengemily79/otel-demo:latest
+      - name: monitor-demo
+        image: zengemily79/monitor-demo:latest
         ports:
         - containerPort: 5000
         env:

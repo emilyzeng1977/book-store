@@ -22,7 +22,7 @@ def get_env_variable(key, default_value):
 otel_coolector_url = get_env_variable("OTEL_COLLECTOR_URL", "grpc://opentelemetry-collector.default.svc.cluster.local:4317")
 
 # 设置 OpenTelemetry 配置，指定服务名称
-service_name = "otel-demo"
+service_name = "monitor-demo"
 resource = Resource.create({SERVICE_NAME: service_name})
 
 # 创建 TracerProvider，并指定 Resource（服务名称）
