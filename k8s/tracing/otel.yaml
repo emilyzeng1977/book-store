@@ -11,8 +11,6 @@ data:
       otlp:
         protocols:
           grpc:
-    processors:
-      batch:
     exporters:
       logging: # 日志导出器，用于调试
         logLevel: debug
@@ -25,8 +23,6 @@ data:
         traces:
           receivers:
           - otlp
-          processors:
-          - batch
           exporters:
           - logging
           - jaeger
