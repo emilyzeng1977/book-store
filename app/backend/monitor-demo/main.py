@@ -55,29 +55,31 @@ logging.basicConfig(level=logging.INFO)
 
 # 定义请求时长指标
 meter = metrics.get_meter(__name__)
-request_duration = meter.create_histogram(
-    "http_request_duration_seconds",
-    description="Duration of HTTP requests in seconds",
-    unit="s",
+request_counter = meter.create_counter(
+    "http_request_total",
+    description="Total number of HTTP requests",
 )
 
-# 添加中间件来记录请求时长
+# 添加中间件来记录请求时长，并跟踪活跃请求数
 @app.before_request
 def before_request():
     request.start_time = time()
 
 @app.after_request
 def after_request(response):
-    duration = time() - request.start_time
-    # 记录请求时长到 Prometheus
-    request_duration.record(duration, {"method": request.method, "endpoint": request.path})
-    logging.info(f"Request to {request.path} took {duration:.4f} seconds")
+    if request.path != "/metrics":  # 排除 /metrics 自身的统计
+        method = request.method
+        status = response.status_code
+        url = request.path
+        # 记录请求总数到 Prometheus
+        request_counter.add(1, {"method": method, "status": str(status), "url": url})
+        logging.info(f"Request to {url} with method {method} resulted in status {status}")
     return response
 
 # 暴露 Prometheus 指标的端点
 @app.route('/metrics', methods=['GET'])
-def metrics():
-    """Expose Prometheus metrics."""
+def metrics_endpoint():
+    # 获取所有指标
     return generate_latest(), 200, {'Content-Type': CONTENT_TYPE_LATEST}
 
 # Greet method to return a greeting message along with the local IP
@@ -86,6 +88,11 @@ def greet():
     # Get the 'name' parameter from the query string, default to 'World' if not provided
     name = request.args.get('name', 'World')
     logging.info("greet, name: %s", name)
+
+    # If name is "error" or "err", return HTTP 500
+    if name.lower() in ["error", "err"]:
+        logging.error("Simulated server error for name: %s", name)
+        return jsonify({"error": "Simulated server error"}), 500
 
     # Retrieve the local machine's IP address
     hostname = socket.gethostname()
@@ -110,6 +117,29 @@ def greet():
     response.headers['X-Trace-Id'] = trace_id_hex
 
     return response
+
+@app.route('/test', methods=['POST'])
+def test_post():
+    """Handle POST requests to /test."""
+    try:
+        # 从请求中获取 JSON 数据
+        data = request.get_json()
+        logging.info("Received data: %s", data)
+
+        # 简单逻辑：将数据中的 key-value 转换为大写（示例处理）
+        processed_data = {k.upper(): v.upper() if isinstance(v, str) else v for k, v in data.items()}
+
+        # 返回处理后的数据
+        response = {
+            "message": "Data processed successfully",
+            "processed_data": processed_data
+        }
+        return jsonify(response), 200
+
+    except Exception as e:
+        logging.error("Error in /test: %s", str(e))
+        return jsonify({"error": "Invalid request", "message": str(e)}), 400
+
 
 @app.route('/healthz', methods=['GET'])
 def health_check():
