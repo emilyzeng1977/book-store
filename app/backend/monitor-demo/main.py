@@ -79,8 +79,22 @@ def after_request(response):
 # 暴露 Prometheus 指标的端点
 @app.route('/metrics', methods=['GET'])
 def metrics_endpoint():
-    # 获取所有指标
-    return generate_latest(), 200, {'Content-Type': CONTENT_TYPE_LATEST}
+    # Extract all lines related to http_request_total
+    all_metrics = generate_latest().decode('utf-8')
+    filtered_metrics = []
+
+    for line in all_metrics.splitlines():
+        if line.startswith("# HELP http_request_total") or \
+                line.startswith("# TYPE http_request_total") or \
+                line.startswith("http_request_total"):
+            filtered_metrics.append(line)
+
+    # Join the filtered lines to create the output
+    metrics_data = "\n".join(filtered_metrics)
+
+    # Return the filtered metrics
+    return metrics_data, 200, {'Content-Type': 'text/plain; charset=utf-8'}
+
 
 # Greet method to return a greeting message along with the local IP
 @app.route('/greet', methods=['GET'])
