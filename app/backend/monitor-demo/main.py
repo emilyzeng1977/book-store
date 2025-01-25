@@ -56,7 +56,7 @@ logging.basicConfig(level=logging.INFO)
 # 定义请求时长指标
 meter = metrics.get_meter(__name__)
 request_counter = meter.create_counter(
-    "http_request_total",
+    "http_requests_total",
     description="Total number of HTTP requests",
 )
 
@@ -79,14 +79,14 @@ def after_request(response):
 # 暴露 Prometheus 指标的端点
 @app.route('/metrics', methods=['GET'])
 def metrics_endpoint():
-    # Extract all lines related to http_request_total
+    # Extract all lines related to http_requests_total
     all_metrics = generate_latest().decode('utf-8')
     filtered_metrics = []
 
     for line in all_metrics.splitlines():
-        if line.startswith("# HELP http_request_total") or \
-                line.startswith("# TYPE http_request_total") or \
-                line.startswith("http_request_total"):
+        if line.startswith("# HELP http_requests_total") or \
+                line.startswith("# TYPE http_requests_total") or \
+                line.startswith("http_requests_total"):
             filtered_metrics.append(line)
 
     # Join the filtered lines to create the output
