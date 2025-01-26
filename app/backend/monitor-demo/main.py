@@ -24,7 +24,7 @@ def get_env_variable(key, default_value):
     return value if value else default_value
 
 # 获取 OpenTelemetry Collector 的 URL
-otel_collector_url = get_env_variable("OTEL_COLLECTOR_URL", "grpc://opentelemetry-collector.default.svc.cluster.local:4317")
+otel_collector_url = get_env_variable("OTEL_COLLECTOR_URL", "grpc://opentelemetry-collector.tracing.svc.cluster.local:4317")
 
 # 设置 OpenTelemetry 配置，指定服务名称
 service_name = "monitor-demo"

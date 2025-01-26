@@ -21,4 +21,4 @@ spec:
         - containerPort: 5000
         env:
         - name: OTEL_COLLECTOR_URL
-          value: "grpc://opentelemetry-collector.istio-system.svc.cluster.local:4317"
+          value: "grpc://opentelemetry-collector.tracing.svc.cluster.local:4317"
