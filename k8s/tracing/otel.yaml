@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: opentelemetry-collector-conf
-  namespace: istio-system
+  namespace: tracing
   labels:
     app: opentelemetry-collector
 data:
@@ -15,7 +15,7 @@ data:
       logging: # 日志导出器，用于调试
         logLevel: debug
       jaeger:
-        endpoint: jaeger-collector.istio-system.svc.cluster.local:14250
+        endpoint: jaeger-collector.tracing.svc.cluster.local:14250
         tls:
           insecure: true
     service:
@@ -31,7 +31,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: opentelemetry-collector
-  namespace: istio-system
+  namespace: tracing
 spec:
   ports:
     - name: grpc-otlp
@@ -45,7 +45,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: opentelemetry-collector
-  namespace: istio-system
+  namespace: tracing
 spec:
   selector:
     matchLabels:
@@ -59,7 +59,6 @@ spec:
     metadata:
       labels:
         app: opentelemetry-collector
-        sidecar.istio.io/inject: "false" # do not inject
     spec:
       containers:
         - image: otel/opentelemetry-collector:0.54.0
