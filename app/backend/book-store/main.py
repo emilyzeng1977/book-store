@@ -179,20 +179,24 @@ def call_price():
         })
 
         # 如果响应中包含 traceparent，将其加入到当前响应的 headers
-        traceparent = response.headers.get('traceparent')
-        if traceparent:
-            flask_response.headers['traceparent'] = traceparent
+        # traceparent = response.headers.get('traceparent')
+        # if traceparent:
+        #     flask_response.headers['traceparent'] = traceparent
 
         return flask_response
 
     except requests.exceptions.Timeout:
+        traceparent = response.headers.get('traceparent') if 'response' in locals() else None
         flask_response = jsonify({'message': 'Request to price service timed out'})
-        flask_response.headers.update(request.headers)
+        if traceparent:
+            flask_response.headers['traceparent'] = traceparent
         return flask_response, 504
 
     except requests.exceptions.RequestException as e:
+        traceparent = response.headers.get('traceparent') if 'response' in locals() else None
         flask_response = jsonify({'message': 'Failed to call price service', 'error': str(e)})
-        flask_response.headers.update(request.headers)
+        if traceparent:
+            flask_response.headers['traceparent'] = traceparent
         return flask_response, 500
 
 

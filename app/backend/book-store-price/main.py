@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, g
+from flask import Flask, jsonify, request
 import socket
 import timeout_decorator
 
@@ -15,13 +15,6 @@ def price():
     traceparent = request.headers.get("traceparent") # OpenTelemetry
     x_b3_traceId = request.headers.get("X-B3-TraceId") # Zipkin
 
-    # 如果 book_id 是 -1，返回 500 错误
-    if book_id == "-1":
-        return jsonify({
-            "error": "Invalid book_id",
-            "message": "book_id cannot be -1"
-        }), 500
-
     # 确定 price 值
     price = "unknown" if book_id == "unknown" else "some_price_value"  # 替换为实际逻辑
 
@@ -30,6 +23,26 @@ def price():
         server_ip = socket.gethostbyname(server_name)
     except socket.gaierror:
         server_ip = "127.0.0.1"  # 默认值
+
+    changed_traceparent = traceparent
+    if traceparent:
+        parts = traceparent.split("-")
+        if len(parts) >= 3:
+            changed_traceparent = parts[1]
+
+    # Handle special case for `book_id`
+    if book_id == "-1":
+        response = jsonify({
+            "error": "Invalid book_id",
+            "message": "book_id cannot be -1",
+            "traceparent": traceparent,
+            "x_b3_traceId": x_b3_traceId,
+        })
+        if traceparent:
+            response.headers["traceparent"] = changed_traceparent
+        if x_b3_traceId:
+            response.headers["x_b3_traceId"] = x_b3_traceId
+        return response, 500
 
     # 创建响应
     response = jsonify({
@@ -46,7 +59,7 @@ def price():
 
     # 将 traceparent 放到响应头
     if traceparent:
-        response.headers["traceparent"] = traceparent
+        response.headers["traceparent"] = changed_traceparent
 
     if x_b3_traceId:
         response.headers["x_b3_traceId"] = x_b3_traceId
