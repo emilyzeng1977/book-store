@@ -1,14 +1,11 @@
 name: Build and Push Docker Image
 
 on:
-  push:
+  pull_request:
     branches:
-      - main
-      - develop
-      - '**'  # 捕获所有分支，处理其他分支
+      - '**'  # 捕获所有分支的 PR
 
 jobs:
-  # 生成镜像并推送
   build_and_push_image:
     runs-on: ubuntu-latest
     steps:
@@ -18,17 +15,10 @@ jobs:
       - name: Set image version tag
         id: version
         run: |
-          if [[ "${GITHUB_REF}" == "refs/heads/main" || "${GITHUB_REF}" == "refs/heads/develop" ]]; then
-            echo "This is a protected branch, approval is needed"
-            echo "needs-approval=true" >> $GITHUB_ENV
-          else
-            BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/} | sed 's/\//_/g')
-            echo "IMAGE_TAG=${BRANCH_NAME}" >> $GITHUB_ENV
-            echo "needs-approval=false" >> $GITHUB_ENV
-          fi
+          BRANCH_NAME=$(echo ${GITHUB_HEAD_REF} | sed 's/\//_/g')
+          echo "IMAGE_TAG=${BRANCH_NAME}" >> $GITHUB_ENV
 
-      - name: Wait for approval (for main and develop branches)
-        if: env.needs-approval == 'true'
+      - name: Wait for approval (for all branches)
         uses: hmarr/auto-approve-action@v3
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -41,5 +31,3 @@ jobs:
       - name: Push image
         run: |
           docker push zengemily79/book_store:${{ env.IMAGE_TAG }}
-
-  # 其他操作或步骤（如果有）
