@@ -1,0 +1,31 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+
+jobs:
+  generate_image_and_push:
+    name: Test Book Store
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Log in to Docker Hub
+        run: echo "${{ secrets.DOCKER_HUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin
+
+      - name: Generate image
+        run: |
+          cd app/backend/book-store
+          docker build -t zengemily79/book_store:${{ github.sha }} .
+          docker tag zengemily79/book_store:${{ github.sha }} zengemily79/book_store:latest
+
+      - name: Push image
+        run: |
+          docker push zengemily79/book_store:${{ github.sha }}
+          docker push zengemily79/book_store:latest
