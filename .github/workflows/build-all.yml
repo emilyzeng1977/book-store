@@ -5,13 +5,11 @@ on:
     branches:
       - main
       - develop
-  pull_request:
 
 jobs:
-  generate_image_and_push:
-    name: Test Book Store
+  build_image:
+    name: Build Image
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -24,6 +22,29 @@ jobs:
           cd app/backend/book-store
           docker build -t zengemily79/book_store:${{ github.sha }} .
           docker tag zengemily79/book_store:${{ github.sha }} zengemily79/book_store:latest
+
+  wait_for_approval:
+    name: Wait for Manual Approval
+    runs-on: ubuntu-latest
+    needs: build_image  # 依赖 build_image 任务
+    steps:
+      - name: Require manual approval
+        uses: hmarr/auto-approve-action@v3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Wait indefinitely for user approval
+        run: |
+          echo "Waiting for manual approval..."
+          while true; do sleep 3600; done  # 进入无限等待状态
+
+  push_image:
+    name: Push Image
+    runs-on: ubuntu-latest
+    needs: wait_for_approval  # 依赖人工审批
+    steps:
+      - name: Log in to Docker Hub
+        run: echo "${{ secrets.DOCKER_HUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin
 
       - name: Push image
         run: |
