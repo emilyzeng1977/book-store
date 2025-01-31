@@ -1,57 +1,45 @@
-name: Build
+name: Build and Push Docker Image
 
 on:
   push:
     branches:
       - main
       - develop
-  pull_request:
-    branches:
-      - main
-      - develop
+      - '**'  # 捕获所有分支，处理其他分支
 
 jobs:
-  build_image:
-    name: Build Image
+  # 生成镜像并推送
+  build_and_push_image:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Log in to Docker Hub
-        run: echo "${{ secrets.DOCKER_HUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin
-
-      - name: Generate image
+      - name: Set image version tag
+        id: version
         run: |
-          cd app/backend/book-store
-          docker build -t zengemily79/book_store:${{ github.sha }} .
-          docker tag zengemily79/book_store:${{ github.sha }} zengemily79/book_store:latest
+          if [[ "${GITHUB_REF}" == "refs/heads/main" || "${GITHUB_REF}" == "refs/heads/develop" ]]; then
+            echo "This is a protected branch, approval is needed"
+            echo "needs-approval=true" >> $GITHUB_ENV
+          else
+            BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/} | sed 's/\//_/g')
+            echo "IMAGE_TAG=${BRANCH_NAME}" >> $GITHUB_ENV
+            echo "needs-approval=false" >> $GITHUB_ENV
+          fi
 
-  wait_for_approval:
-    name: Wait for Manual Approval
-    runs-on: ubuntu-latest
-    needs: build_image
-    if: github.event_name == 'pull_request'  # 只有在 PR 事件下运行
-    steps:
-      - name: Require manual approval
+      - name: Wait for approval (for main and develop branches)
+        if: env.needs-approval == 'true'
         uses: hmarr/auto-approve-action@v3
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Wait indefinitely for user approval
+      - name: Build image
         run: |
-          echo "Waiting for manual approval..."
-          while true; do sleep 3600; done  # 无限等待
-
-  push_image:
-    name: Push Image
-    runs-on: ubuntu-latest
-    needs: wait_for_approval
-    steps:
-      - name: Log in to Docker Hub
-        run: echo "${{ secrets.DOCKER_HUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin
+          cd app/backend/book-store
+          docker build -t zengemily79/book_store:${{ env.IMAGE_TAG }} .
 
       - name: Push image
         run: |
-          docker push zengemily79/book_store:${{ github.sha }}
-          docker push zengemily79/book_store:latest
+          docker push zengemily79/book_store:${{ env.IMAGE_TAG }}
+
+  # 其他操作或步骤（如果有）
