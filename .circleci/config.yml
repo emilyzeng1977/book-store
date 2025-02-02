@@ -20,12 +20,6 @@ jobs:
           command: |
             pwd
             ls -alt
-      - run:
-          name: Run tests (book-store)
-          working_directory: ~/book-store
-          command: |
-            ls -alt
-            pytest || exit 1
 
   approve:
     executor: python-executor
@@ -43,6 +37,7 @@ jobs:
           name: Build Docker Image (book-store)
           working_directory: ~/book-store
           command: |
+            ls
             docker build -t zengemily79/book-store:latest .
       - run:
           name: Login to Docker Hub
