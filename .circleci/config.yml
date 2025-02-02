@@ -4,12 +4,10 @@ executors:
   python-executor:
     docker:
       - image: python:3.12
-    working_directory: ~/project/app/backend
 
   docker-executor:
     docker:
       - image: docker:24
-    working_directory: ~/project/app/backend
     resource_class: medium
 
 jobs:
@@ -19,11 +17,9 @@ jobs:
       - checkout
       - run:
           name: Install dependencies (book-store)
-          working_directory: ~/book-store
           command: |
             pwd
             ls -alt
-            pip install -r requirements.txt
       - run:
           name: Run tests (book-store)
           working_directory: ~/book-store
