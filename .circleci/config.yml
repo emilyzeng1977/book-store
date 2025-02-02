@@ -21,6 +21,8 @@ jobs:
           name: Install dependencies (book-store)
           working_directory: ~/book-store
           command: |
+            pwd
+            ls -alt
             pip install -r requirements.txt
       - run:
           name: Run tests (book-store)
