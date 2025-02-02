@@ -4,7 +4,7 @@ executors:
   python-executor:
     docker:
       - image: python:3.12
-        working_directory: ~/project/app
+    working_directory: ~/project/app
 
   docker-executor:
     docker:
