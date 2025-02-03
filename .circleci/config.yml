@@ -34,8 +34,6 @@ jobs:
           name: Build Docker Image (book-store)
           command: |
             cd ~/project/app/backend/book-store
-            pwd
-            ls
             docker build -t zengemily79/book-store:latest .
       - run:
           name: Login to Docker Hub
