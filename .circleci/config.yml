@@ -4,7 +4,6 @@ executors:
   python-executor:
     docker:
       - image: python:3.12
-    working_directory: ~/project/app/backend
 
   docker-executor:
     docker:
@@ -14,6 +13,7 @@ executors:
 jobs:
   test-book-store:
     executor: python-executor
+    working_directory: ~/project/app/backend/book-store
     steps:
       - checkout
       - run:
