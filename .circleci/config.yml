@@ -1,26 +1,22 @@
 version: 2.1
 
 executors:
-  python-executor:
-    docker:
-      - image: python:3.12
-
   docker-executor:
     docker:
       - image: docker:24
     resource_class: medium
 
 jobs:
-  test-book-store:
-    executor: python-executor
-    steps:
-      - checkout
-      - run:
-          name: Install dependencies (book-store)
-          command: |
-            cd ~/project/app/backend/book-store
-            pwd
-            ls -alt
+#  test-book-store:
+#    executor: python-executor
+#    steps:
+#      - checkout
+#      - run:
+#          name: Install dependencies (book-store)
+#          command: |
+#            cd ~/project/app/backend/book-store
+#            pwd
+#            ls -alt
 
   approve:
     executor: python-executor
@@ -36,8 +32,9 @@ jobs:
       - setup_remote_docker
       - run:
           name: Build Docker Image (book-store)
-          working_directory: ~/book-store
           command: |
+            cd ~/project/app/backend/book-store
+            pwd
             ls
             docker build -t zengemily79/book-store:latest .
       - run:
@@ -53,11 +50,8 @@ workflows:
   version: 2
   build-and-deploy:
     jobs:
-      - test-book-store
       - approve:
           type: approval
-          requires:
-            - test-book-store
       - build-and-push-book-store:
           requires:
             - approve
