@@ -7,17 +7,6 @@ executors:
     resource_class: medium
 
 jobs:
-#  test-book-store:
-#    executor: python-executor
-#    steps:
-#      - checkout
-#      - run:
-#          name: Install dependencies (book-store)
-#          command: |
-#            cd ~/project/app/backend/book-store
-#            pwd
-#            ls -alt
-
   approve:
     executor: python-executor
     steps:
