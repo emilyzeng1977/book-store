@@ -14,7 +14,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # 复制当前目录所有文件到容器中的工作目录
-COPY .. .
+COPY . .
 
 # 暴露端口 5000
 EXPOSE 5000

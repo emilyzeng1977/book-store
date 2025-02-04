@@ -206,5 +206,14 @@ def health_check():
     # 例如，检查数据库连接或其他依赖服务是否可用
     return jsonify({"status": "ok"}), 200
 
+def get_version():
+    try:
+        with open("version.txt", "r") as f:
+            return f.read().strip()
+    except FileNotFoundError:
+        return "unknown"
+
 if __name__ == '__main__':
+    version = get_version()
+    print(f"Starting Book Store version: {version}")
     app.run(debug=True, host='0.0.0.0', port=5000)
