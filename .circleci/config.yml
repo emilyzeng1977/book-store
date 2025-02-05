@@ -25,6 +25,8 @@ jobs:
       - run:
           name: Prepare Environment
           command: |
+            pwd
+            ls
             cd $PROJECT_DIR
             BRANCH_NAME=$(echo "$CIRCLE_BRANCH" | sed 's/\//-/g')
             if [ "$BRANCH_NAME" = "develop" ] || [ "$BRANCH_NAME" = "main" ]; then
