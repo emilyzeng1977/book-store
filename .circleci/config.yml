@@ -27,19 +27,15 @@ jobs:
           command: |
             cd $PROJECT_DIR
             BRANCH_NAME=$(echo "$CIRCLE_BRANCH" | sed 's/\//-/g')
-            if [ "$BRANCH_NAME" = "develop" ] || [ "$BRANCH_NAME" = "main" ]; then
-              VERSION=$(cat $VERSION_FILE)
-            else
+            if [ "$BRANCH_NAME" != "develop" ] || [ "$BRANCH_NAME" != "main" ]; then
               VERSION=$BRANCH_NAME
               echo $VERSION > $VERSION_FILE
             fi
-            echo "Using version: $VERSION"
-            echo $VERSION > version_output.txt
       - run:
           name: Build Docker Image (book-store)
           command: |
             cd $PROJECT_DIR
-            VERSION=$(cat version_output.txt)
+            VERSION=$(cat $VERSION_FILE)
             docker build -t zengemily79/book-store:$VERSION .
       - run:
           name: Login to Docker Hub
@@ -49,7 +45,7 @@ jobs:
           name: Push Docker Image (book-store)
           command: |
             cd $PROJECT_DIR
-            VERSION=$(cat version_output.txt)
+            VERSION=$(cat $VERSION_FILE)
             docker push zengemily79/book-store:$VERSION
 
 workflows:
