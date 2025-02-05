@@ -18,7 +18,7 @@ jobs:
     executor: docker-executor
     environment:
       PROJECT_DIR: /root/project/app/backend/book-store
-      VERSION_FILE: ${PROJECT_DIR}/version.txt
+      VERSION_FILE: /root/project/app/backend/book-store/version.txt
     steps:
       - checkout
       - setup_remote_docker
