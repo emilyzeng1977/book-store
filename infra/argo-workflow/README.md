@@ -19,6 +19,8 @@ helm uninstall argo --namespace argo
 ```
 
 argo submit https://raw.githubusercontent.com/argoproj/argo-workflows/master/examples/hello-world.yaml --watch
+
+example
 ```
 kubectl apply -f checkout.yaml -n argo
 ```
