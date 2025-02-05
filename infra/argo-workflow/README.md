@@ -22,6 +22,7 @@ argo submit https://raw.githubusercontent.com/argoproj/argo-workflows/master/exa
 
 example
 example 4-1
+example 4-2
 ```
 kubectl apply -f checkout.yaml -n argo
 ```
