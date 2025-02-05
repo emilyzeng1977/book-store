@@ -1,0 +1,38 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: book-store-workflow-template
+spec:
+  entrypoint: checkout-project
+  arguments:
+    parameters:
+    - name: github-username
+      value: emilyzeng1977
+    - name: project-name
+      value: book_store
+
+  templates:
+  - name: checkout-project
+    inputs:
+      parameters:
+      - name: github-username
+      - name: project-name
+    container:
+      image: alpine/git:latest
+      command: [sh, -c]
+      args:
+      - |
+        echo "Cloning project from GitHub..."
+        REPO_URL="https://github.com/{{inputs.parameters.github-username}}/{{inputs.parameters.project-name}}.git"
+        echo "Repository URL: $REPO_URL"
+        
+        echo "Cloning the repository..."
+        git clone $REPO_URL
+        
+        if [ $? -ne 0 ]; then
+          echo "Failed to clone the project."
+          exit 1
+        fi
+        
+        echo "Clone successful. Listing project files:"
+        ls -la {{inputs.parameters.project-name}}
