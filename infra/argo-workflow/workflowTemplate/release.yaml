@@ -5,12 +5,20 @@ metadata:
   namespace: argo
 spec:
   entrypoint: main
+  volumeClaimTemplates:
+  - metadata:
+      name: shared
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi
   arguments:
     parameters:
     - name: github-username
       value: emilyzeng1977
     - name: project-name
-      value: book-store
+      value: book_store
     - name: dockerhub-username
       value: zengemily79
     - name: image-tag
@@ -49,7 +57,7 @@ spec:
     container:
       image: alpine/git:latest
       volumeMounts:
-      - name: shared-data
+      - name: shared
         mountPath: /shared
       command: [sh, -c]
       args:
@@ -57,6 +65,8 @@ spec:
         echo "Cloning project from GitHub..."
         REPO_URL="https://github.com/{{inputs.parameters.github-username}}/{{inputs.parameters.project-name}}.git"
         git clone $REPO_URL /shared/{{inputs.parameters.project-name}}
+        
+        ls -alt /shared
         
         if [ $? -ne 0 ]; then
           echo "Failed to clone the project."
@@ -79,7 +89,7 @@ spec:
     container:
       image: docker:24.0.5
       volumeMounts:
-      - name: shared-data
+      - name: shared
         mountPath: /shared
       env:
       - name: DOCKER_PASSWORD
@@ -90,7 +100,11 @@ spec:
       command: [sh, -c]
       args:
       - |
+        echo "检查 /shared 目录内容..."
+        ls -la /shared
+        
         echo "Navigating to shared project directory..."
+        ls /shared
         cd /shared/{{inputs.parameters.project-name}}
         ls
         
@@ -105,6 +119,4 @@ spec:
         
         echo "Docker image pushed successfully."
 
-  volumes:
-  - name: shared-data
-    emptyDir: {}
+
