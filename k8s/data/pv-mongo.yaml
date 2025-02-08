@@ -7,8 +7,9 @@ spec:
     storage: 1Gi  # Adjust the storage size as needed
   accessModes:
     - ReadWriteOnce
+  storageClassName: standard # 没有这句不工作
   hostPath:
-    path: /Users/tom/Study/data  # Local directory on the host
+    path: /Users/tom/Study/data/mongo  # Local directory on the host
   persistentVolumeReclaimPolicy: Retain
   # 决定了当与 PV 绑定的 Persistent Volume Claim (PVC) 被删除时，这个 PV 应该如何处理
   #  Retain（保留）：
