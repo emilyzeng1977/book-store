@@ -11,7 +11,7 @@ kubectl get pods -n argo
 ```
 暴露端口
 ```
-kubectl -n argo port-forward svc/argo-argo-workflows-server 2746:2746
+kubectl -n argo port-forward svc/argo-server 2746:2746
 ```
 
 ```
