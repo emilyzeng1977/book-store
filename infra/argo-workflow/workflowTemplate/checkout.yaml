@@ -2,16 +2,45 @@ apiVersion: argoproj.io/v1alpha1
 kind: WorkflowTemplate
 metadata:
   name: book-store-release-template
+  namespace: argo
 spec:
-  entrypoint: checkout-project
+  entrypoint: main
   arguments:
     parameters:
     - name: github-username
       value: emilyzeng1977
     - name: project-name
-      value: book_store
+      value: book-store
+    - name: dockerhub-username
+      value: zengemily79
+    - name: image-tag
+      value: latest
 
   templates:
+  - name: main
+    steps:
+    - - name: clone-repo
+        template: checkout-project
+        arguments:
+          parameters:
+          - name: github-username
+            value: "{{workflow.parameters.github-username}}"
+          - name: project-name
+            value: "{{workflow.parameters.project-name}}"
+    - - name: approval-step
+        template: approval
+    - - name: build-and-push-image
+        template: build-and-push
+        arguments:
+          parameters:
+          - name: project-name
+            value: "{{workflow.parameters.project-name}}"
+          - name: dockerhub-username
+            value: "{{workflow.parameters.dockerhub-username}}"
+          - name: image-tag
+            value: "{{workflow.parameters.image-tag}}"
+
+  # Step 1: Clone GitHub repository
   - name: checkout-project
     inputs:
       parameters:
@@ -19,20 +48,63 @@ spec:
       - name: project-name
     container:
       image: alpine/git:latest
+      volumeMounts:
+      - name: shared-data
+        mountPath: /shared
       command: [sh, -c]
       args:
       - |
         echo "Cloning project from GitHub..."
         REPO_URL="https://github.com/{{inputs.parameters.github-username}}/{{inputs.parameters.project-name}}.git"
-        echo "Repository URL: $REPO_URL"
-        
-        echo "Cloning the repository..."
-        git clone $REPO_URL
+        git clone $REPO_URL /shared/{{inputs.parameters.project-name}}
         
         if [ $? -ne 0 ]; then
           echo "Failed to clone the project."
           exit 1
         fi
         
-        echo "Clone successful. Listing project files:"
-        ls -la {{inputs.parameters.project-name}}
+        echo "Clone successful. Project files in /shared/{{inputs.parameters.project-name}}"
+
+  # Step 2: Approval step (manual intervention)
+  - name: approval
+    suspend: {}
+
+  # Step 3: Build and push Docker image
+  - name: build-and-push
+    inputs:
+      parameters:
+      - name: project-name
+      - name: dockerhub-username
+      - name: image-tag
+    container:
+      image: docker:24.0.5
+      volumeMounts:
+      - name: shared-data
+        mountPath: /shared
+      env:
+      - name: DOCKER_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: dockerhub-secret
+            key: password
+      command: [sh, -c]
+      args:
+      - |
+        echo "Navigating to shared project directory..."
+        cd /shared/{{inputs.parameters.project-name}}
+        ls
+        
+        echo "Building Docker image..."
+        docker build -t {{inputs.parameters.dockerhub-username}}/{{inputs.parameters.project-name}}:{{inputs.parameters.image-tag}} .
+        
+        echo "Logging into Docker Hub..."
+        echo $DOCKER_PASSWORD | docker login -u {{inputs.parameters.dockerhub-username}} --password-stdin
+        
+        echo "Pushing Docker image to Docker Hub..."
+        docker push {{inputs.parameters.dockerhub-username}}/{{inputs.parameters.project-name}}:{{inputs.parameters.image-tag}}
+        
+        echo "Docker image pushed successfully."
+
+  volumes:
+  - name: shared-data
+    emptyDir: {}
