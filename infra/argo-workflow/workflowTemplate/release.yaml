@@ -7,7 +7,7 @@ spec:
   entrypoint: main
   volumeClaimTemplates:
   - metadata:
-      name: shared
+      name: workspace
     spec:
       accessModes: [ "ReadWriteOnce" ]
       resources:
@@ -38,7 +38,7 @@ spec:
     - - name: approval-step
         template: approval
     - - name: build-and-push-image
-        template: build-and-push
+        template: kaniko-build-and-push
         arguments:
           parameters:
           - name: project-name
@@ -57,66 +57,44 @@ spec:
     container:
       image: alpine/git:latest
       volumeMounts:
-      - name: shared
-        mountPath: /shared
+      - name: workspace
+        mountPath: /workspace
       command: [sh, -c]
       args:
       - |
         echo "Cloning project from GitHub..."
         REPO_URL="https://github.com/{{inputs.parameters.github-username}}/{{inputs.parameters.project-name}}.git"
-        git clone $REPO_URL /shared/{{inputs.parameters.project-name}}
-        
-        ls -alt /shared
+        git clone $REPO_URL /workspace/{{inputs.parameters.project-name}}
         
         if [ $? -ne 0 ]; then
           echo "Failed to clone the project."
           exit 1
         fi
-        
-        echo "Clone successful. Project files in /shared/{{inputs.parameters.project-name}}"
 
   # Step 2: Approval step (manual intervention)
   - name: approval
     suspend: {}
 
-  # Step 3: Build and push Docker image
-  - name: build-and-push
+  # Step 3: Build and push Docker image using Kaniko
+  - name: kaniko-build-and-push
     inputs:
       parameters:
       - name: project-name
       - name: dockerhub-username
       - name: image-tag
     container:
-      image: docker:24.0.5
+      image: gcr.io/kaniko-project/executor:latest
       volumeMounts:
-      - name: shared
-        mountPath: /shared
+      - name: workspace
+        mountPath: /workspace
       env:
       - name: DOCKER_PASSWORD
         valueFrom:
           secretKeyRef:
             name: dockerhub-secret
             key: password
-      command: [sh, -c]
       args:
-      - |
-        echo "检查 /shared 目录内容..."
-        ls -la /shared
-        
-        echo "Navigating to shared project directory..."
-        ls /shared
-        cd /shared/{{inputs.parameters.project-name}}
-        ls
-        
-        echo "Building Docker image..."
-        docker build -t {{inputs.parameters.dockerhub-username}}/{{inputs.parameters.project-name}}:{{inputs.parameters.image-tag}} .
-        
-        echo "Logging into Docker Hub..."
-        echo $DOCKER_PASSWORD | docker login -u {{inputs.parameters.dockerhub-username}} --password-stdin
-        
-        echo "Pushing Docker image to Docker Hub..."
-        docker push {{inputs.parameters.dockerhub-username}}/{{inputs.parameters.project-name}}:{{inputs.parameters.image-tag}}
-        
-        echo "Docker image pushed successfully."
-
-
+      - --context=/workspace/{{inputs.parameters.project-name}}
+      - --dockerfile=/workspace/{{inputs.parameters.project-name}}/app/backend/book_store/Dockerfile
+      - --destination={{inputs.parameters.dockerhub-username}}/{{inputs.parameters.project-name}}:{{inputs.parameters.image-tag}}
+      - --verbosity=debug
