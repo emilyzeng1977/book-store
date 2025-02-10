@@ -8,7 +8,7 @@ Back End
 请切换到Backend目录下
 ```
 docker build -t zengemily79/book-store:latest .
-[//]: # (docker run -it --rm -p 5000:5000 zengemily79/book_store)
+[//]: # (docker run -it --rm -p 5000:5000 zengemily79/book-store)
 ```
 运行docker-compose
 ```

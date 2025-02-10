@@ -18,7 +18,7 @@ spec:
     - name: github-username
       value: emilyzeng1977
     - name: project-name
-      value: book_store
+      value: book-store
     - name: dockerhub-username
       value: zengemily79
     - name: image-tag
@@ -95,6 +95,6 @@ spec:
             key: password
       args:
       - --context=/workspace/{{inputs.parameters.project-name}}
-      - --dockerfile=/workspace/{{inputs.parameters.project-name}}/app/backend/book_store/Dockerfile
+      - --dockerfile=/workspace/{{inputs.parameters.project-name}}/app/backend/book-store/Dockerfile
       - --destination={{inputs.parameters.dockerhub-username}}/{{inputs.parameters.project-name}}:{{inputs.parameters.image-tag}}
       - --verbosity=debug

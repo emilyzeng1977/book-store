@@ -35,8 +35,8 @@ services:
     depends_on:
       - mongo
 
-  book_store:
-    image: zengemily79/book_store:latest
+  book-store:
+    image: zengemily79/book-store:latest
     container_name: book-store
     environment:
       MONGO_HOST: mongo
