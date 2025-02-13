@@ -1,0 +1,16 @@
+services:
+  kaniko:
+    image: gcr.io/kaniko-project/executor:latest
+    container_name: kaniko
+    environment:
+      - DOCKER_CONFIG=/kaniko/.docker/
+    volumes:
+      - /Users/tom/Study/Projects/book-store/app/backend/book-store:/workspace  # 挂载本地项目目录到容器中
+      - ./docker-config:/kaniko/.docker/  # 挂载 Docker 配置文件
+    command:
+      [
+        "--context=/workspace",
+        "--dockerfile=/workspace/Dockerfile",
+        "--destination=zengemily79/book-store:latest",
+        "--verbosity=debug"
+      ]

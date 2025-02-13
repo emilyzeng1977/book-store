@@ -57,8 +57,8 @@ spec:
     container:
       image: alpine/git:latest
       volumeMounts:
-      - name: workspace
-        mountPath: /workspace
+        - mountPath: /workspace
+          name: workspace
       command: [sh, -c]
       args:
       - |
@@ -70,7 +70,6 @@ spec:
           echo "Failed to clone the project."
           exit 1
         fi
-
   # Step 2: Approval step (manual intervention)
   - name: approval
     suspend: {}
@@ -85,16 +84,17 @@ spec:
     container:
       image: gcr.io/kaniko-project/executor:latest
       volumeMounts:
-      - name: workspace
-        mountPath: /workspace
-      env:
-      - name: DOCKER_PASSWORD
-        valueFrom:
-          secretKeyRef:
-            name: dockerhub-secret
-            key: password
+        - name: workspace
+          mountPath: /workspace
+        - name: kaniko-config
+          mountPath: /kaniko/.docker/config.json
+          subPath: config.json
       args:
-      - --context=/workspace/{{inputs.parameters.project-name}}
+      - --context=/workspace/{{inputs.parameters.project-name}}/app/backend/book-store
       - --dockerfile=/workspace/{{inputs.parameters.project-name}}/app/backend/book-store/Dockerfile
       - --destination={{inputs.parameters.dockerhub-username}}/{{inputs.parameters.project-name}}:{{inputs.parameters.image-tag}}
       - --verbosity=debug
+  volumes:
+  - name: kaniko-config
+    secret:
+      secretName: kaniko-config
