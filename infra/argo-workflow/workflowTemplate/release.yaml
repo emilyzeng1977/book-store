@@ -89,11 +89,16 @@ spec:
         - name: kaniko-config
           mountPath: /kaniko/.docker/config.json
           subPath: config.json
+      env:
+      - name: BUILD_CONTEXT
+        value: "app/backend/book-store"
       args:
-      - --context=/workspace/{{inputs.parameters.project-name}}/app/backend/book-store
-      - --dockerfile=/workspace/{{inputs.parameters.project-name}}/app/backend/book-store/Dockerfile
+      - --context=/workspace/{{inputs.parameters.project-name}}/$(BUILD_CONTEXT)
+      - --dockerfile=/workspace/{{inputs.parameters.project-name}}/$(BUILD_CONTEXT)/Dockerfile
       - --destination={{inputs.parameters.dockerhub-username}}/{{inputs.parameters.project-name}}:{{inputs.parameters.image-tag}}
       - --verbosity=debug
+      - --cache=true
+      - --cache-dir=/kaniko/cache
   volumes:
   - name: kaniko-config
     secret:
