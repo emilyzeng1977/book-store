@@ -1,22 +1,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: book-store-price-dev
+  name: book-store-price-dev-01
   labels:
-    app: book-store-price-dev
+    app: book-store-price-dev-01
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: book-store-price-dev
+      app: book-store-price-dev-01
   template:
     metadata:
       labels:
-        app: book-store-price-dev
+        app: book-store-price-dev-01
     spec:
       containers:
-      - name: book-store-price-dev
-        image: zengemily79/book-store-price:latest
+      - name: book-store-price-dev-01
+        image: zengemily79/book-store-price:dev-01-demo
         ports:
         - containerPort: 5000
         livenessProbe:
