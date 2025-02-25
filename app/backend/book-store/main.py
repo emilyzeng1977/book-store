@@ -164,9 +164,12 @@ def call_price():
     price_service_url = f"http://{price_server}:{price_port}/price"
     params = {'book_id': book_id} if book_id else {}  # 仅在 book_id 存在时添加参数
 
+    # 复制原始请求的所有 headers
+    headers = dict(request.headers)
+
     try:
         # 发起 HTTP 请求
-        response = requests.get(price_service_url, params=params, timeout=1)
+        response = requests.get(price_service_url, params=params, headers=headers,  timeout=1)
         response.raise_for_status()  # 检查响应状态码
 
         # 创建返回的 Flask 响应
@@ -183,6 +186,7 @@ def call_price():
         # if traceparent:
         #     flask_response.headers['traceparent'] = traceparent
 
+        # 复制 `book-store-price` 返回的所有 headers
         return flask_response
 
     except requests.exceptions.Timeout:
