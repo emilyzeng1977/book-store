@@ -1,0 +1,50 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  name: parallel-conditional-loop-fail
+  namespace: argo
+spec:
+  entrypoint: main
+
+  templates:
+  - name: main
+    dag:
+      tasks:
+      - name: task-a
+        template: fail-task  # A 失败
+
+      - name: task-b
+        template: echo
+        arguments:
+          parameters: [{name: message, value: "Task B"}]
+
+      - name: loop-task
+        template: echo
+        arguments:
+          parameters:
+          - name: message
+            value: "{{item}}"
+        withItems: ["task-1", "task-2", "task-3"]
+        dependencies: ["task-a", "task-b"]
+        when: "'{{tasks.task-a.status}}' == 'Succeeded' && '{{tasks.task-b.status}}' == 'Succeeded'"
+
+      - name: task-c
+        template: echo
+        arguments:
+          parameters: [{name: message, value: "Task C - Handling Failure"}]
+        dependencies: ["task-a", "task-b"]
+        when: "'{{tasks.task-a.status}}' != 'Succeeded' || '{{tasks.task-b.status}}' != 'Succeeded'"
+
+  - name: fail-task
+    container:
+      image: alpine:latest
+      command: ["sh", "-c"]
+      args: ["echo 'Task A is failing'; exit 1"]
+
+  - name: echo
+    inputs:
+      parameters:
+      - name: message
+    container:
+      image: alpine:latest
+      command: ["echo", "{{inputs.parameters.message}}"]
