@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: book-store-price-dev-01
-        image: zengemily79/book-store-price:01-demo-SNAPSHOT
+        image: zengemily79/book-store-price:dev-01-demo-SNAPSHOT
         ports:
         - containerPort: 5000
         livenessProbe:
