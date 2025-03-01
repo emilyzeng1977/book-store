@@ -1,16 +1,23 @@
-version: 2.1  # 指定 CircleCI 配置的版本
+version: 2.1
 
-jobs:  # 定义任务
+jobs:
   build:
     docker:
-      - image: node:18  # 运行环境（Docker 镜像）
+      - image: python:3.12  # 使用 Python 3.12 镜像
     steps:
       - checkout  # 拉取代码
-      - run: npm install  # 安装依赖
-      - run: npm test  # 运行测试
+      - run:
+          name: 模拟构建
+          command: echo "正在构建 Docker 镜像..."
+      - run:
+          name: 模拟打标签
+          command: echo "将镜像标记为 myrepo/myapp:latest"
+      - run:
+          name: 模拟推送
+          command: echo "将镜像推送到 Docker 仓库..."
 
-workflows:  # 定义工作流
+workflows:
   version: 2
-  build_and_test:
+  build_and_push:
     jobs:
-      - build  # 执行 `build` 任务
+      - build
