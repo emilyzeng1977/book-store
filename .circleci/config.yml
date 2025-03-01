@@ -25,26 +25,16 @@ jobs:
           name: Determine Version
           command: |
             cd $PROJECT_DIR
+            echo "$CIRCLE_BRANCH"
             if [ "$CIRCLE_BRANCH" != "develop" ] && [ "$CIRCLE_BRANCH" != "main" ]; then 
               VERSION=$(echo "$CIRCLE_BRANCH" | sed 's/\//-/g')-SNAPSHOT
             else
               VERSION=$(echo "$CIRCLE_BRANCH" | sed 's/\//-/g')
             fi
+            echo $VERSION
             echo "VERSION=$VERSION" >> $BASH_ENV
-      - run:
-          name: Build Docker Image (book-store)
-          command: |
-            cd $PROJECT_DIR
-            docker build -t zengemily79/book-store:$VERSION .
-      - run:
-          name: Login to Docker Hub
-          command: |
-            echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
-      - run:
-          name: Push Docker Image (book-store)
-          command: |
-            cd $PROJECT_DIR
-            docker push zengemily79/book-store:$VERSION
+
+
 
 workflows:
   version: 2
