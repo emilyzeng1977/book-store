@@ -18,23 +18,23 @@ jobs:
     executor: docker-executor
     environment:
       PROJECT_DIR: /root/project/app/backend/book-store
-      VERSION_FILE: /root/project/app/backend/book-store/version.txt
     steps:
       - checkout
       - setup_remote_docker
       - run:
-          name: Prepare Environment
+          name: Determine Version
           command: |
             cd $PROJECT_DIR
-            if [ "$BRANCH_NAME" != "develop" ] && [ "$BRANCH_NAME" != "main" ]; then 
-              VERSION=$(echo "$CIRCLE_BRANCH" | sed 's/\//-/g')        
-              echo $VERSION > $VERSION_FILE
+            if [ "$CIRCLE_BRANCH" != "develop" ] && [ "$CIRCLE_BRANCH" != "main" ]; then 
+              VERSION=$(echo "$CIRCLE_BRANCH" | sed 's/\//-/g')-SNAPSHOT
+            else
+              VERSION=$(echo "$CIRCLE_BRANCH" | sed 's/\//-/g')
             fi
+            echo "VERSION=$VERSION" >> $BASH_ENV
       - run:
           name: Build Docker Image (book-store)
           command: |
             cd $PROJECT_DIR
-            VERSION=$(cat $VERSION_FILE)
             docker build -t zengemily79/book-store:$VERSION .
       - run:
           name: Login to Docker Hub
@@ -44,7 +44,6 @@ jobs:
           name: Push Docker Image (book-store)
           command: |
             cd $PROJECT_DIR
-            VERSION=$(cat $VERSION_FILE)
             docker push zengemily79/book-store:$VERSION
 
 workflows:
