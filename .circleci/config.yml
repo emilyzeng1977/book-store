@@ -1,58 +1,16 @@
-version: 2.1
+version: 2.1  # 指定 CircleCI 配置的版本
 
-executors:
-  docker-executor:
+jobs:  # 定义任务
+  build:
     docker:
-      - image: docker:24
-    resource_class: medium
-
-jobs:
-  approve:
-    executor: docker-executor
+      - image: node:18  # 运行环境（Docker 镜像）
     steps:
-      - run:
-          name: Await manual approval
-          command: echo "Waiting for approval"
+      - checkout  # 拉取代码
+      - run: npm install  # 安装依赖
+      - run: npm test  # 运行测试
 
-  build-and-push-book-store:
-    executor: docker-executor
-    environment:
-      PROJECT_DIR: /root/project/app/backend/book-store
-      VERSION_FILE: /root/project/app/backend/book-store/version.txt
-    steps:
-      - checkout
-      - setup_remote_docker
-      - run:
-          name: Prepare Environment
-          command: |
-            cd $PROJECT_DIR
-            if [ "$BRANCH_NAME" != "develop" ] && [ "$BRANCH_NAME" != "main" ]; then 
-              VERSION=$(echo "$CIRCLE_BRANCH" | sed 's/\//-/g')        
-              echo $VERSION > $VERSION_FILE
-            fi
-      - run:
-          name: Build Docker Image (book-store)
-          command: |
-            cd $PROJECT_DIR
-            VERSION=$(cat $VERSION_FILE)
-            docker build -t zengemily79/book-store:$VERSION .
-      - run:
-          name: Login to Docker Hub
-          command: |
-            echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
-      - run:
-          name: Push Docker Image (book-store)
-          command: |
-            cd $PROJECT_DIR
-            VERSION=$(cat $VERSION_FILE)
-            docker push zengemily79/book-store:$VERSION
-
-workflows:
+workflows:  # 定义工作流
   version: 2
-  build-and-deploy:
+  build_and_test:
     jobs:
-      - approve:
-          type: approval
-      - build-and-push-book-store:
-          requires:
-            - approve
+      - build  # 执行 `build` 任务
