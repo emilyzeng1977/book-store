@@ -25,11 +25,10 @@ jobs:
           name: Determine Version
           command: |
             cd $PROJECT_DIR
-            echo "$CIRCLE_BRANCH"
-            if [ "$CIRCLE_BRANCH" != "develop" ] && [ "$CIRCLE_BRANCH" != "main" ]; then 
-              VERSION=$(echo "$CIRCLE_BRANCH" | sed 's/\//-/g')-SNAPSHOT
+            if [ "$CIRCLE_BRANCH" = "main" ]; then 
+              VERSION=$CIRCLE_BRANCH
             else
-              VERSION=$(echo "$CIRCLE_BRANCH" | sed 's/\//-/g')
+              VERSION=$(echo "$CIRCLE_BRANCH" | sed 's/\//-/g')-SNAPSHOT
             fi
             echo "VERSION=$VERSION" >> $BASH_ENV
       - run:
