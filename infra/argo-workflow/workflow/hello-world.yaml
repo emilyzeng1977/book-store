@@ -8,5 +8,5 @@ spec:
   templates:
   - name: hello
     container:
-      image: alpine:latest
-      command: [echo, "Hello, Argo!"]
+    image: alpine:latest
+    command: [echo, "Hello, Argo!"]
