@@ -1,0 +1,105 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: book-store-release-template
+  namespace: argo
+spec:
+  entrypoint: main
+  volumeClaimTemplates:
+  - metadata:
+      name: workspace
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi
+  arguments:
+    parameters:
+    - name: github-username
+      value: emilyzeng1977
+    - name: project-name
+      value: book-store
+    - name: dockerhub-username
+      value: zengemily79
+    - name: image-tag
+      value: latest
+
+  templates:
+  - name: main
+    steps:
+    - - name: clone-repo
+        template: checkout-project
+        arguments:
+          parameters:
+          - name: github-username
+            value: "{{workflow.parameters.github-username}}"
+          - name: project-name
+            value: "{{workflow.parameters.project-name}}"
+    - - name: approval-step
+        template: approval
+    - - name: build-and-push-image
+        template: kaniko-build-and-push
+        arguments:
+          parameters:
+          - name: project-name
+            value: "{{workflow.parameters.project-name}}"
+          - name: dockerhub-username
+            value: "{{workflow.parameters.dockerhub-username}}"
+          - name: image-tag
+            value: "{{workflow.parameters.image-tag}}"
+
+  # Step 1: Clone GitHub repository
+  - name: checkout-project
+    inputs:
+      parameters:
+      - name: github-username
+      - name: project-name
+    container:
+      image: alpine/git:latest
+      volumeMounts:
+        - mountPath: /workspace
+          name: workspace
+      command: [sh, -c]
+      args:
+      - |
+        echo "Cloning project from GitHub..."
+        REPO_URL="https://github.com/{{inputs.parameters.github-username}}/{{inputs.parameters.project-name}}.git"
+        git clone $REPO_URL /workspace/{{inputs.parameters.project-name}}
+        
+        if [ $? -ne 0 ]; then
+          echo "Failed to clone the project."
+          exit 1
+        fi
+  # Step 2: Approval step (manual intervention)
+  - name: approval
+    suspend: {}
+
+  # Step 3: Build and push Docker image using Kaniko
+  - name: kaniko-build-and-push
+    inputs:
+      parameters:
+      - name: project-name
+      - name: dockerhub-username
+      - name: image-tag
+    container:
+      image: gcr.io/kaniko-project/executor:latest
+      volumeMounts:
+        - name: workspace
+          mountPath: /workspace
+        - name: kaniko-config
+          mountPath: /kaniko/.docker/config.json
+          subPath: config.json
+      env:
+      - name: BUILD_CONTEXT
+        value: "app/backend/book-store"
+      args:
+      - --context=/workspace/{{inputs.parameters.project-name}}/$(BUILD_CONTEXT)
+      - --dockerfile=/workspace/{{inputs.parameters.project-name}}/$(BUILD_CONTEXT)/Dockerfile
+      - --destination={{inputs.parameters.dockerhub-username}}/{{inputs.parameters.project-name}}:{{inputs.parameters.image-tag}}
+      - --verbosity=debug
+      - --cache=true
+      - --cache-dir=/kaniko/cache
+  volumes:
+  - name: kaniko-config
+    secret:
+      secretName: kaniko-config

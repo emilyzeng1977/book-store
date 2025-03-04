@@ -1,0 +1,18 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: monitor-demo
+  namespace: monitoring
+  labels:
+    release: prometheus-operator # 确保与 Prometheus 配置的 label 匹配
+spec:
+  selector:
+    matchLabels:
+      app: monitor-demo # 确保与服务的 labels 匹配
+  namespaceSelector:
+    matchNames:
+      - default # 当与监控服务不在一个命名空间是需要指定服务所在的命名空间
+  endpoints:
+    - port: http-port # 服务的端口号或端口名称
+      path: /metrics # 指标路径
+      interval: 2s # 抓取间隔

@@ -1,0 +1,18 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: book-store-price
+spec:
+  hosts:
+    - book-store-price  # 逻辑服务名，与 DestinationRule 对应
+  http:
+    - match:
+        - headers:
+            branch:
+              exact: "dev-01"  # 例如 branch 的值为 'dev'
+      route:
+        - destination:
+            host: book-store-price-dev-01
+    - route:
+        - destination:
+            host: book-store-price  # 默认路由

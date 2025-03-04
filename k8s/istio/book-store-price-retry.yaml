@@ -1,0 +1,15 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: book-store-price-retry
+spec:
+  hosts:
+  - book-store-price  # Target service name
+  http:
+  - route:
+    - destination:
+        host: book-store-price  # Target service name
+    retries:
+      attempts: 3  # Maximum retry attempts
+      perTryTimeout: 2s  # Timeout for each retry attempt
+      retryOn: "5xx"  # Retry only on 5xx errors

@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: kib-manual
+  name: kibana-logging
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kib-manual
+  template:
+    metadata:
+      labels:
+        app: kib-manual
+    spec:
+      containers:
+      - image: docker.elastic.co/kibana/kibana:8.7.0-arm64
+        name: kibana
+        ports:
+        - containerPort: 5601
+          name: ui
+          protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: kib-manual
+  name: kibana-service
+spec:
+  ports:
+  - port: 5601
+    protocol: TCP
+    targetPort: 5601
+  selector:
+    app: kib-manual
+  type: NodePort

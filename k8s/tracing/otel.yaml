@@ -1,0 +1,84 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: opentelemetry-collector-conf
+  namespace: tracing
+  labels:
+    app: opentelemetry-collector
+data:
+  opentelemetry-collector-config: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+    exporters:
+      logging: # 日志导出器，用于调试
+        logLevel: debug
+      jaeger:
+        endpoint: jaeger-collector.tracing.svc.cluster.local:14250
+        tls:
+          insecure: true
+    service:
+      pipelines:
+        traces:
+          receivers:
+          - otlp
+          exporters:
+          - logging
+          - jaeger
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: opentelemetry-collector
+  namespace: tracing
+spec:
+  ports:
+    - name: grpc-otlp
+      port: 4317
+      protocol: TCP
+      targetPort: 4317
+  selector:
+    app: opentelemetry-collector
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opentelemetry-collector
+  namespace: tracing
+spec:
+  selector:
+    matchLabels:
+      app: opentelemetry-collector
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: opentelemetry-collector
+    spec:
+      containers:
+        - image: otel/opentelemetry-collector:0.54.0
+          imagePullPolicy: IfNotPresent
+          name: opentelemetry-collector
+          command:
+            - "/otelcol"
+            - "--config=/conf/opentelemetry-collector-config.yaml"
+          ports:
+            - name: grpc-otlp
+              containerPort: 4317
+              protocol: TCP
+          volumeMounts:
+            - name: opentelemetry-collector-config-vol
+              mountPath: /conf
+      volumes:
+        - configMap:
+            defaultMode: 420
+            items:
+              - key: opentelemetry-collector-config
+                path: opentelemetry-collector-config.yaml
+            name: opentelemetry-collector-conf
+          name: opentelemetry-collector-config-vol

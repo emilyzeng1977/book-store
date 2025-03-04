@@ -1,0 +1,12 @@
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: book-store-price-breaker  # 规则的名称，用于唯一标识
+spec:
+  host: book-store-price          # 指定目标服务的主机名
+  trafficPolicy:                  # 配置流量策略
+    outlierDetection:             # 异常检测配置
+      consecutive5xxErrors: 5     # 当某个实例连续出现 5 次 5xx 错误时，将其剔除
+      interval: 10s               # 错误统计的时间间隔（每隔 10 秒统计一次）
+      baseEjectionTime: 30s       # 实例被剔除后的隔离时间，30 秒后可以重新加入流量池
+      maxEjectionPercent: 100     # 最大可剔除实例的比例（可选，不配置时默认为 10%）

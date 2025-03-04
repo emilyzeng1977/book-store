@@ -1,0 +1,58 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: beat-manual-config
+  namespace: default # 替换为你实际的命名空间
+data:
+  filebeat.yml: |
+    filebeat.inputs:
+      - type: log
+        paths:
+          - /tmp/output.log
+    
+    output.logstash:
+      hosts: ["logstash-service:5044"]
+#    processors:
+#      - add_host_metadata
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: logging-app-manual
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: logging-app-manual
+  template:
+    metadata:
+      labels:
+        name: logging-app-manual
+    spec:
+      hostname: logging-app-manual
+      containers:
+      - name: beat-manual
+        image: docker.elastic.co/beats/filebeat:8.7.0-arm64
+        args: [
+          "-c", "/etc/filebeat/filebeat.yml",
+          "-e"      ]
+        volumeMounts:
+          - name: beat-manual-config
+            mountPath: /etc/filebeat/
+          - name: manual-log-directory
+            mountPath: /tmp/
+      - name: logging-app-manual
+        image: sladesoftware/log-application:latest
+        volumeMounts:
+          - name: manual-log-directory
+            mountPath: /tmp/
+      volumes:
+        - name: beat-manual-config
+          configMap:
+            name: beat-manual-config
+            items:
+              - key: filebeat.yml
+                path: filebeat.yml
+        - name: manual-log-directory
+          emptyDir: {}

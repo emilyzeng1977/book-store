@@ -1,0 +1,14 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: book-store-price-delay
+spec:
+  action: delay
+  mode: one
+  selector:
+    labelSelectors:
+      app: book-store-price
+  delay:
+    latency: "1s"
+    correlation: "0"
+  duration: "300s"
