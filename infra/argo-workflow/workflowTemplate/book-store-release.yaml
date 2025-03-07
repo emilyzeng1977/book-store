@@ -21,8 +21,8 @@ spec:
       value: book-store
     - name: dockerhub-username
       value: zengemily79
-    - name: image-tag
-      value: latest
+    - name: version
+      value: 1.0.0
 
   templates:
   - name: main
@@ -36,7 +36,7 @@ spec:
           - name: project-name
             value: "{{workflow.parameters.project-name}}"
     - - name: approval-step
-        template: approval
+        template: approva
     - - name: build-and-push-image
         template: kaniko-build-and-push
         arguments:
@@ -45,8 +45,8 @@ spec:
             value: "{{workflow.parameters.project-name}}"
           - name: dockerhub-username
             value: "{{workflow.parameters.dockerhub-username}}"
-          - name: image-tag
-            value: "{{workflow.parameters.image-tag}}"
+          - name: version
+            value: "{{workflow.parameters.version}}"
 
   # Step 1: Clone GitHub repository
   - name: checkout-project
@@ -80,7 +80,7 @@ spec:
       parameters:
       - name: project-name
       - name: dockerhub-username
-      - name: image-tag
+      - name: version
     container:
       image: gcr.io/kaniko-project/executor:latest
       volumeMounts:
@@ -95,7 +95,7 @@ spec:
       args:
       - --context=/workspace/{{inputs.parameters.project-name}}/$(BUILD_CONTEXT)
       - --dockerfile=/workspace/{{inputs.parameters.project-name}}/$(BUILD_CONTEXT)/Dockerfile
-      - --destination={{inputs.parameters.dockerhub-username}}/{{inputs.parameters.project-name}}:{{inputs.parameters.image-tag}}
+      - --destination={{inputs.parameters.dockerhub-username}}/{{inputs.parameters.project-name}}:{{inputs.parameters.version}}
       - --verbosity=debug
       - --cache=true
       - --cache-dir=/kaniko/cache
