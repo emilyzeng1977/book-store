@@ -27,17 +27,17 @@ spec:
   templates:
   - name: main
     steps:
-    - - name: clone-repo
-        template: checkout-project
+    - - name: create-release-branch
+        template: create-release-branch
         arguments:
           parameters:
           - name: github-username
             value: "{{workflow.parameters.github-username}}"
           - name: project-name
             value: "{{workflow.parameters.project-name}}"
-    - - name: approval-step
-        template: approva
-    - - name: build-and-push-image
+          - name: version
+            value: "{{workflow.parameters.version}}"
+    - - name: build-and-push-snapshot
         template: kaniko-build-and-push
         arguments:
           parameters:
@@ -46,33 +46,42 @@ spec:
           - name: dockerhub-username
             value: "{{workflow.parameters.dockerhub-username}}"
           - name: version
-            value: "{{workflow.parameters.version}}"
+            value: "{{workflow.parameters.version}}-SNAPSHOT"
+    - - name: approval-step
+        template: approval
+    - - name: deploy-release-environment
+        template: deploy-release-environment
 
-  # Step 1: Clone GitHub repository
-  - name: checkout-project
+  - name: create-release-branch
     inputs:
       parameters:
       - name: github-username
       - name: project-name
+      - name: version
     container:
       image: alpine/git:latest
       volumeMounts:
         - mountPath: /workspace
           name: workspace
+      env:
+        - name: GITHUB_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: github-secret
+              key: token
       command: [sh, -c]
       args:
       - |
         echo "Cloning project from GitHub..."
         REPO_URL="https://github.com/{{inputs.parameters.github-username}}/{{inputs.parameters.project-name}}.git"
         git clone $REPO_URL /workspace/{{inputs.parameters.project-name}}
-        
-        if [ $? -ne 0 ]; then
-          echo "Failed to clone the project."
-          exit 1
-        fi
-  # Step 2: Approval step (manual intervention)
-  - name: approval
-    suspend: {}
+        cd /workspace/{{inputs.parameters.project-name}}
+        git checkout develop
+        git checkout -b release/{{inputs.parameters.version}}
+        echo "Updating remote URL for authentication..."
+        git remote set-url origin "https://{{inputs.parameters.github-username}}:${GITHUB_TOKEN}@github.com/{{inputs.parameters.github-username}}/{{inputs.parameters.project-name}}.git"
+        echo "Push..."
+        git push origin release/{{inputs.parameters.version}}
 
   # Step 3: Build and push Docker image using Kaniko
   - name: kaniko-build-and-push
@@ -99,6 +108,18 @@ spec:
       - --verbosity=debug
       - --cache=true
       - --cache-dir=/kaniko/cache
+
+  - name: approval
+    suspend: {}
+
+  - name: deploy-release-environment
+    container:
+      image: alpine:latest
+      command: [sh, -c]
+      args:
+      - |
+        echo "Deploying release environment for version {{workflow.parameters.version}}..."
+
   volumes:
   - name: kaniko-config
     secret:
