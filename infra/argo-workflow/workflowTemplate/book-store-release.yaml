@@ -28,7 +28,7 @@ spec:
   - name: main
     steps:
     - - name: create-release-branch
-        template: create-release-branch
+        template: create-release-branch-template
         arguments:
           parameters:
           - name: github-username
@@ -38,7 +38,7 @@ spec:
           - name: version
             value: "{{workflow.parameters.version}}"
     - - name: build-and-push-snapshot
-        template: kaniko-build-and-push
+        template: build-and-push-snapshot-templete
         arguments:
           parameters:
           - name: project-name
@@ -47,12 +47,12 @@ spec:
             value: "{{workflow.parameters.dockerhub-username}}"
           - name: version
             value: "{{workflow.parameters.version}}-SNAPSHOT"
-    - - name: approval-step
-        template: approval
-    - - name: deploy-release-environment
-        template: deploy-release-environment
+    - - name: deploy-for-test
+        template: deploy-for-test-template
+    - - name: approval
+        template: approval-template
 
-  - name: create-release-branch
+  - name: create-release-branch-template
     inputs:
       parameters:
       - name: github-username
@@ -83,8 +83,7 @@ spec:
         echo "Push..."
         git push origin release/{{inputs.parameters.version}}
 
-  # Step 3: Build and push Docker image using Kaniko
-  - name: kaniko-build-and-push
+  - name: build-and-push-snapshot-templete
     inputs:
       parameters:
       - name: project-name
@@ -109,16 +108,16 @@ spec:
       - --cache=true
       - --cache-dir=/kaniko/cache
 
-  - name: approval
-    suspend: {}
-
-  - name: deploy-release-environment
+  - name: deploy-for-test-template
     container:
       image: alpine:latest
       command: [sh, -c]
       args:
       - |
         echo "Deploying release environment for version {{workflow.parameters.version}}..."
+
+  - name: approval-template
+    suspend: {}
 
   volumes:
   - name: kaniko-config
