@@ -26,8 +26,9 @@ spec:
 
   templates:
   - name: main
-    steps:
-    - - name: create-release-branch
+    dag:
+      tasks:
+      - name: create-release-branch
         template: create-release-branch-template
         arguments:
           parameters:
@@ -37,8 +38,9 @@ spec:
             value: "{{workflow.parameters.project-name}}"
           - name: version
             value: "{{workflow.parameters.version}}"
-    - - name: build-and-push-snapshot-image
-        template: build-and-push-snapshot-image-templete
+
+      - name: build-and-push-snapshot-image
+        template: build-and-push-snapshot-image-template
         arguments:
           parameters:
           - name: project-name
@@ -47,30 +49,51 @@ spec:
             value: "{{workflow.parameters.dockerhub-username}}"
           - name: version
             value: "{{workflow.parameters.version}}-SNAPSHOT"
-    - - name: deploy-for-test
+        dependencies:
+        - create-release-branch
+
+      - name: deploy-for-test
         template: deploy-for-test-template
-    - - name: approve-to-start-release
+        dependencies:
+        - build-and-push-snapshot-image
+
+      - name: approve-to-start-release
         template: approval-template
-    - - name: merge-back-to-main
+        dependencies:
+        - deploy-for-test
+
+      - name: merge-back-to-main
         template: echo-template
         arguments:
           parameters:
           - name: message
             value: "Merge back to main..."
-    - - name: merge-back-to-develop
+        dependencies:
+        - approve-to-start-release
+
+      - name: merge-back-to-develop
         template: echo-template
         arguments:
           parameters:
           - name: message
             value: "Merge back to develop..."
-    - - name: approve-to-generate-production-image
+        dependencies:
+        - approve-to-start-release
+
+      - name: approve-to-generate-production-image
         template: approval-template
-    - - name: build-and-push-production-image
+        dependencies:
+        - merge-back-to-main
+        - merge-back-to-develop
+
+      - name: build-and-push-production-image
         template: echo-template
         arguments:
           parameters:
           - name: message
             value: "Generating {{workflow.parameters.project-name}}:{{workflow.parameters.version}}..."
+        dependencies:
+        - approve-to-generate-production-image
 
   - name: create-release-branch-template
     inputs:
@@ -103,7 +126,7 @@ spec:
         echo "Push..."
         git push origin release/{{inputs.parameters.version}}
 
-  - name: build-and-push-snapshot-image-templete
+  - name: build-and-push-snapshot-image-template
     inputs:
       parameters:
       - name: project-name
