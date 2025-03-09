@@ -37,8 +37,8 @@ spec:
             value: "{{workflow.parameters.project-name}}"
           - name: version
             value: "{{workflow.parameters.version}}"
-    - - name: build-and-push-snapshot
-        template: build-and-push-snapshot-templete
+    - - name: build-and-push-snapshot-image
+        template: build-and-push-snapshot-image-templete
         arguments:
           parameters:
           - name: project-name
@@ -49,8 +49,28 @@ spec:
             value: "{{workflow.parameters.version}}-SNAPSHOT"
     - - name: deploy-for-test
         template: deploy-for-test-template
-    - - name: approval
+    - - name: approve-to-start-release
         template: approval-template
+    - - name: merge-back-to-main
+        template: echo-template
+        arguments:
+          parameters:
+          - name: message
+            value: "Merge back to main..."
+    - - name: merge-back-to-develop
+        template: echo-template
+        arguments:
+          parameters:
+          - name: message
+            value: "Merge back to develop..."
+    - - name: approve-to-generate-production-image
+        template: approval-template
+    - - name: build-and-push-production-image
+        template: echo-template
+        arguments:
+          parameters:
+          - name: message
+            value: "Generating {{workflow.parameters.project-name}}:{{workflow.parameters.version}}..."
 
   - name: create-release-branch-template
     inputs:
@@ -83,7 +103,7 @@ spec:
         echo "Push..."
         git push origin release/{{inputs.parameters.version}}
 
-  - name: build-and-push-snapshot-templete
+  - name: build-and-push-snapshot-image-templete
     inputs:
       parameters:
       - name: project-name
@@ -118,6 +138,17 @@ spec:
 
   - name: approval-template
     suspend: {}
+
+  - name: echo-template
+    inputs:
+      parameters:
+      - name: message
+    container:
+      image: alpine:latest
+      command: [sh, -c]
+      args:
+      - |
+        echo "{{inputs.parameters.message}}"
 
   volumes:
   - name: kaniko-config
