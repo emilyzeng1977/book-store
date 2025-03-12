@@ -1,0 +1,10 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: book-store
+spec:
+  template:
+    spec:
+      containers:
+        - name: book-store
+          image: zengemily79/book-store:1.0.0-SNAPSHOT
