@@ -2,4 +2,10 @@ resources:
   - ../../base
 
 patches:
-  - path: patch-deployment.yaml
+  - target:
+      kind: Deployment
+      name: book-store
+    patch: |-
+      - op: replace
+        path: "/spec/replicas"
+        value: 3
