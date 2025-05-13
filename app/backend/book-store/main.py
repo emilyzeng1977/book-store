@@ -20,20 +20,20 @@ def get_env_variable(key, default_value):
 logging.basicConfig(level=logging.INFO)
 
 # Read environment variables with robust defaults
-mongo_user = get_env_variable("MONGO_USER", "tom")
-mongo_password = get_env_variable("MONGO_PASSWORD", "123456")
-mongo_host = get_env_variable("MONGO_HOST", "mongo")
-mongo_port = int(get_env_variable("MONGO_PORT", "27017"))  # Ensure it's an integer
-mongo_db = get_env_variable("MONGO_DB", "book-store")
+atlas_mongo_user = get_env_variable("ATLAS_MONGO_USER", "tom")
+atlas_mongo_password = get_env_variable("ATLAS_MONGO_PASSWORD", "abc123456")
+atlas_mongo_host = get_env_variable("ATLAS_MONGO_HOST", "emily-demo.unlcmad.mongodb.net")
+atlas_mongo_app_name = get_env_variable("ATLAS_MONGO_APP_NAME", "emily-demo")
+atlas_mongo_db = get_env_variable("ATLAS_MONGO_DB", "book-store")
 
 # Construct the MongoDB URI
-mongo_uri = f"mongodb://{mongo_user}:{mongo_password}@{mongo_host}:{mongo_port}/{mongo_db}"
+atlas_mongo_uri = f"mongodb+srv://{atlas_mongo_user}:{atlas_mongo_password}@{atlas_mongo_host}/?retryWrites=true&w=majority&appName={atlas_mongo_app_name}"
 
 try:
-    client = MongoClient(mongo_uri, serverSelectionTimeoutMS=1000)
-    db = client[mongo_db]  # 动态获取数据库对象
+    client = MongoClient(atlas_mongo_uri, serverSelectionTimeoutMS=1000)
+    db = client[atlas_mongo_db]  # 动态获取数据库对象
     collection = db.books
-    logging.info(f"Connected to MongoDB database: {mongo_db}")
+    logging.info(f"Connected to MongoDB database: {atlas_mongo_db}")
 except Exception as e:
     logging.error(f"Error connecting to MongoDB: {e}")
     raise
@@ -172,7 +172,6 @@ def call_price():
         response = requests.get(price_service_url, params=params, headers=headers,  timeout=1)
         response.raise_for_status()  # 检查响应状态码
 
-        # 创建返回的 Flask 响应
         # 创建返回的 Flask 响应
         flask_response = jsonify({
             "message": "Call price Service",
