@@ -34,16 +34,16 @@ spec:
           periodSeconds: 10
           timeoutSeconds: 3  # 超时时间，单位为秒
         env:
-        - name: MONGO_HOST
-          value: "mongo"
-        - name: MONGO_USER
+        - name: ATLAS_MONGO_USER
           value: "tom"
-        - name: MONGO_PASSWORD
-          value: "123456"
-        - name: MONGO_DB
+        - name: ATLAS_MONGO_PASSWORD
+          value: "xxxx"
+        - name: ATLAS_MONGO_HOST
+          value: "emily-demo.unlcmad.mongodb.net"
+        - name: ATLAS_MONGO_APP_NAME
           value: "book-store"
-        - name: MONGO_PORT
-          value: "27017"
+        - name: ATLAS_MONGO_DB
+          value: "book-store"
         - name: PRICE_SERVER
           value: "book-store-price"
         - name: PRICE_PORT
