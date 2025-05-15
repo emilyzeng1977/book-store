@@ -37,7 +37,7 @@ spec:
         - name: ATLAS_MONGO_USER
           value: "tom"
         - name: ATLAS_MONGO_PASSWORD
-          value: "xxxx"
+          value: "abc123456"
         - name: ATLAS_MONGO_HOST
           value: "emily-demo.unlcmad.mongodb.net"
         - name: ATLAS_MONGO_APP_NAME
