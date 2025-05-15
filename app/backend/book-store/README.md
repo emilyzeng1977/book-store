@@ -25,3 +25,8 @@ Push to docker-hub
 docker push zengemily79/book-store:latest
 ```
 
+```commandline
+docker buildx build --platform linux/amd64,linux/arm64 -t zengemily79/book-store:latest --push .
+docker buildx build --platform linux/amd64,linux/arm64 -t zengemily79/book-store:1.0.0-SNAPSHOT --push .
+```
+

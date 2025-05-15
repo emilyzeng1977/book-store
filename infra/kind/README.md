@@ -30,7 +30,6 @@ kubectl run -it --rm busybox --image=busybox:latest --restart=Never -- ping 192.
 
 ```
 
-
 根据 kubectl get pods 的输出，你已经有名为 test1 和 test2 的 Pod，且它们处于 Running 状态。但是 nslookup test1 返回 NXDOMAIN，说明 Pod 名称并没有直接被解析。这是因为 Kubernetes 的默认 DNS 配置不会为单个 Pod 自动创建 DNS 记录。
 
 以下是详细说明和解决方法：
