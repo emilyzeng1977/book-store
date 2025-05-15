@@ -2,111 +2,150 @@ import logging
 import os
 import socket
 
-import requests  # To make HTTP requests to other endpoints
-import timeout_decorator
+import requests
 from bson.objectid import ObjectId
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from pymongo import MongoClient, errors
 
+# Flask 应用初始化
 app = Flask(__name__)
+
+# 跨域支持，开发阶段全开放，生产环境建议指定域名
 CORS(app)
 
-def get_env_variable(key, default_value):
-    """Get an environment variable or return the default value if it's not set or empty."""
+# 日志配置，INFO级别，方便查看运行信息
+logging.basicConfig(
+    level=logging.INFO,
+    format='[%(asctime)s] %(levelname)s in %(module)s: %(message)s'
+)
+
+def get_env_variable(key: str, default_value: str) -> str:
+    """获取环境变量，若未设置则使用默认值"""
     value = os.getenv(key)
     return value if value else default_value
 
-logging.basicConfig(level=logging.INFO)
-
-# Read environment variables with robust defaults
+# ----------------------
+# MongoDB Atlas 配置参数（可通过环境变量覆盖）
+# ----------------------
 atlas_mongo_user = get_env_variable("ATLAS_MONGO_USER", "tom")
 atlas_mongo_password = get_env_variable("ATLAS_MONGO_PASSWORD", "abc123456")
 atlas_mongo_host = get_env_variable("ATLAS_MONGO_HOST", "emily-demo.unlcmad.mongodb.net")
 atlas_mongo_app_name = get_env_variable("ATLAS_MONGO_APP_NAME", "emily-demo")
 atlas_mongo_db = get_env_variable("ATLAS_MONGO_DB", "book-store")
 
-# Construct the MongoDB URI
-atlas_mongo_uri = f"mongodb+srv://{atlas_mongo_user}:{atlas_mongo_password}@{atlas_mongo_host}/?retryWrites=true&w=majority&appName={atlas_mongo_app_name}"
+# 生成 MongoDB 连接字符串
+atlas_mongo_uri = (
+    f"mongodb+srv://{atlas_mongo_user}:{atlas_mongo_password}@{atlas_mongo_host}"
+    f"/?retryWrites=true&w=majority&appName={atlas_mongo_app_name}"
+)
 
+# 初始化 MongoDB 连接
 try:
-    client = MongoClient(atlas_mongo_uri, serverSelectionTimeoutMS=1000)
-    db = client[atlas_mongo_db]  # 动态获取数据库对象
+    client = MongoClient(atlas_mongo_uri, serverSelectionTimeoutMS=3000)  # 3秒连接超时
+    db = client[atlas_mongo_db]
     collection = db.books
     logging.info(f"Connected to MongoDB database: {atlas_mongo_db}")
 except Exception as e:
     logging.error(f"Error connecting to MongoDB: {e}")
     raise
 
+# ----------------------
+# 路由定义
+# ----------------------
 
-# Greet method to return a greeting message along with the local IP
 @app.route('/greet', methods=['GET'])
 def greet():
-    # Get the 'name' parameter from the query string, default to 'World' if not provided
+    """
+    简单的问候接口，返回传入的名字和服务器IP
+    示例: /greet?name=Tom
+    """
     name = request.args.get('name', 'World')
-    logging.info("greet, name: %s", name)
-
-    # Retrieve the local machine's IP address
     hostname = socket.gethostname()
-    # 获取服务器的 IP 地址
     try:
         local_ip = socket.gethostbyname(hostname)
     except socket.gaierror:
-        local_ip = "127.0.0.1"  # 默认值
+        local_ip = "127.0.0.1"
 
-    # Create a greeting message that includes the local IP
     greeting_message = f"Hello, {name}! This server's IP address is {local_ip}."
-
     return jsonify({'message': greeting_message})
 
-
-# Retrieve all books
 @app.route('/books', methods=['GET'])
-@timeout_decorator.timeout(1, use_signals=False)  # 超时设为1秒
 def get_books():
+    """
+    获取所有书籍列表，设置查询超时1秒
+    返回格式:
+    {
+      "books": [
+        {"_id": "...", "title": "...", "author": "..."},
+        ...
+      ]
+    }
+    """
     try:
         books = []
-        # 设置查询超时时间
-        for book in collection.find().max_time_ms(1000):  # 查询超时设置为 1 秒
+        for book in collection.find().max_time_ms(1000):
             book['_id'] = str(book['_id'])
             books.append(book)
         return jsonify({'books': books})
     except errors.ExecutionTimeout:
         return jsonify({'error': 'Query timed out'}), 504
     except errors.PyMongoError as e:
+        logging.error(f"MongoDB query error: {e}")
         return jsonify({'error': str(e)}), 500
 
 
-# Retrieve a single book by ID
 @app.route('/books/<string:book_id>', methods=['GET'])
 def get_book(book_id):
-    book = collection.find_one({'_id': ObjectId(book_id)})
+    """
+    根据书籍ID获取书籍详情
+    """
+    try:
+        obj_id = ObjectId(book_id)
+    except Exception:
+        return jsonify({'error': 'Invalid book ID'}), 400
+
+    book = collection.find_one({'_id': obj_id})
     if book:
         book['_id'] = str(book['_id'])
         return jsonify(book)
     return jsonify({'error': 'Book not found'}), 404
 
 
-# Add a new book
 @app.route('/books', methods=['POST'])
 def add_book():
-    if not request.json or not 'title' in request.json or not 'author' in request.json:
+    """
+    添加一本新书，要求传入 JSON，必须包含title和author字段
+    """
+    if not request.json or 'title' not in request.json or 'author' not in request.json:
         return jsonify({'error': 'The new book must have a title and author'}), 400
 
     new_book = {
         'title': request.json['title'],
         'author': request.json['author']
     }
-    result = collection.insert_one(new_book)
+    try:
+        result = collection.insert_one(new_book)
+    except errors.PyMongoError as e:
+        logging.error(f"MongoDB insert error: {e}")
+        return jsonify({'error': 'Failed to add book'}), 500
+
     new_book['_id'] = str(result.inserted_id)
     return jsonify(new_book), 201
 
 
-# Update a book by ID
 @app.route('/books/<string:book_id>', methods=['PUT'])
 def update_book(book_id):
+    """
+    根据书籍ID更新书籍信息，支持title和author字段更新
+    """
+    try:
+        obj_id = ObjectId(book_id)
+    except Exception:
+        return jsonify({'error': 'Invalid book ID'}), 400
+
     if not request.json:
-        return jsonify({'error': 'Invalid request'}), 400
+        return jsonify({'error': 'Invalid request, JSON body required'}), 400
 
     update_data = {}
     if 'title' in request.json:
@@ -119,104 +158,98 @@ def update_book(book_id):
             return jsonify({'error': 'Invalid author'}), 400
         update_data['author'] = request.json['author']
 
-    result = collection.update_one(
-        {'_id': ObjectId(book_id)},
-        {'set': update_data}
-    )
+    if not update_data:
+        return jsonify({'error': 'No valid fields to update'}), 400
+
+    try:
+        result = collection.update_one({'_id': obj_id}, {'$set': update_data})
+    except errors.PyMongoError as e:
+        logging.error(f"MongoDB update error: {e}")
+        return jsonify({'error': 'Failed to update book'}), 500
 
     if result.matched_count == 0:
         return jsonify({'error': 'Book not found'}), 404
 
-    book = collection.find_one({'_id': ObjectId(book_id)})
+    book = collection.find_one({'_id': obj_id})
     book['_id'] = str(book['_id'])
     return jsonify(book)
 
 
-# Delete a book by ID
 @app.route('/books/<string:book_id>', methods=['DELETE'])
 def delete_book(book_id):
-    result = collection.delete_one({'_id': ObjectId(book_id)})
+    """
+    根据书籍ID删除书籍
+    """
+    try:
+        obj_id = ObjectId(book_id)
+    except Exception:
+        return jsonify({'error': 'Invalid book ID'}), 400
+
+    try:
+        result = collection.delete_one({'_id': obj_id})
+    except errors.PyMongoError as e:
+        logging.error(f"MongoDB delete error: {e}")
+        return jsonify({'error': 'Failed to delete book'}), 500
+
     if result.deleted_count == 0:
         return jsonify({'error': 'Book not found'}), 404
     return jsonify({'message': 'Book deleted'})
 
-# New endpoint to call price for a book from another service
+
 @app.route('/call-price', methods=['GET'])
-@timeout_decorator.timeout(2, use_signals=False)  # 超时设为1秒
 def call_price():
-    # 读取环境变量
+    """
+    调用外部价格服务接口，默认地址和端口可通过环境变量 PRICE_SERVER 和 PRICE_PORT 设置
+    支持通过 ?book_id=xxx 传参
+    返回价格服务的 JSON 响应及本服务的服务器名称和IP
+    """
     price_server = get_env_variable('PRICE_SERVER', 'host.docker.internal')
     price_port = get_env_variable('PRICE_PORT', '5000')
 
-    # 获取服务器的主机名
     server_name = socket.gethostname()
-
-    # 获取服务器的 IP 地址
     try:
         server_ip = socket.gethostbyname(server_name)
     except socket.gaierror:
-        server_ip = "127.0.0.1"  # 默认值
+        server_ip = "127.0.0.1"
 
-    # 获取 book_id 参数
-    book_id = request.args.get('book_id')  # 如果未提供 book_id，则返回 None
-
-    # 构造 price 服务的 URL
+    book_id = request.args.get('book_id')
     price_service_url = f"http://{price_server}:{price_port}/price"
-    params = {'book_id': book_id} if book_id else {}  # 仅在 book_id 存在时添加参数
-
-    # 复制原始请求的所有 headers
+    params = {'book_id': book_id} if book_id else {}
     headers = dict(request.headers)
 
     try:
-        # 发起 HTTP 请求
-        response = requests.get(price_service_url, params=params, headers=headers,  timeout=1)
-        response.raise_for_status()  # 检查响应状态码
-
-        # 创建返回的 Flask 响应
-        flask_response = jsonify({
+        response = requests.get(price_service_url, params=params, headers=headers, timeout=2)
+        response.raise_for_status()
+        return jsonify({
             "message": "Call price Service",
             "server_name": server_name,
             "server_ip": server_ip,
             "response from price server": response.json()
         })
-
-        # 如果响应中包含 traceparent，将其加入到当前响应的 headers
-        # traceparent = response.headers.get('traceparent')
-        # if traceparent:
-        #     flask_response.headers['traceparent'] = traceparent
-
-        # 复制 `book-store-price` 返回的所有 headers
-        return flask_response
-
     except requests.exceptions.Timeout:
-        traceparent = response.headers.get('traceparent') if 'response' in locals() else None
-        flask_response = jsonify({'message': 'Request to price service timed out'})
-        if traceparent:
-            flask_response.headers['traceparent'] = traceparent
-        return flask_response, 504
-
+        return jsonify({'message': 'Request to price service timed out'}), 504
     except requests.exceptions.RequestException as e:
-        traceparent = response.headers.get('traceparent') if 'response' in locals() else None
-        flask_response = jsonify({'message': 'Failed to call price service', 'error': str(e)})
-        if traceparent:
-            flask_response.headers['traceparent'] = traceparent
-        return flask_response, 500
+        logging.error(f"Error calling price service: {e}")
+        return jsonify({'message': 'Failed to call price service', 'error': str(e)}), 500
 
 
 @app.route('/healthz', methods=['GET'])
 def health_check():
-    # 这里可以添加你想要的健康检查逻辑
-    # 例如，检查数据库连接或其他依赖服务是否可用
+    """健康检查接口，返回服务状态"""
     return jsonify({"status": "ok"}), 200
 
-def get_version():
+
+def get_version() -> str:
+    """读取版本号文件version.txt，如果不存在则返回 unknown"""
     try:
         with open("version.txt", "r") as f:
             return f.read().strip()
     except FileNotFoundError:
         return "unknown"
 
+
 if __name__ == '__main__':
     version = get_version()
-    print(f"Starting Book Store version: {version}")
+    logging.info(f"Starting Book Store version: {version}")
+    # 启动Flask应用，监听0.0.0.0:5000端口
     app.run(debug=True, host='0.0.0.0', port=5000)
