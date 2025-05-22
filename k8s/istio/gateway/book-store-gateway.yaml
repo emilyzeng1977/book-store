@@ -1,0 +1,15 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: book-store
+  namespace: istio-system  # Gateway 通常部署在 istio-system
+spec:
+  selector:
+    istio: ingressgateway  # 选择 Istio 自带的 Ingress Gateway
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - "bookstore.com"  # 允许访问的域名
