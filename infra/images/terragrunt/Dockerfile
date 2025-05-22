@@ -4,6 +4,7 @@ FROM alpine:3.18
 # 安装 curl、unzip、bash、python3 和 pip
 RUN apk add --no-cache \
     curl \
+    zip \
     unzip \
     bash \
     python3 \
