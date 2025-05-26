@@ -7,12 +7,12 @@ provider "aws" {
 # ---------------------------
 
 resource "aws_vpc" "main" {
-  cidr_block = "10.0.0.0/16"  # VPC的IP地址范围
+  cidr_block = "10.1.0.0/16"  # VPC的IP地址范围
 }
 
 resource "aws_subnet" "subnet" {
   vpc_id            = aws_vpc.main.id       # 关联到上面创建的VPC
-  cidr_block        = "10.0.2.0/24"         # 子网的IP地址范围
+  cidr_block        = "10.1.0.0/24"         # 子网的IP地址范围
   availability_zone = "ap-southeast-2a"     # 可用区，指定在该区域的某个分区
   map_public_ip_on_launch = true             # 启动实例时自动分配公网IP
 }
@@ -114,7 +114,7 @@ data "aws_ssm_parameter" "datadog_api_key" {
 # ---------------------------
 
 resource "aws_security_group" "ecs_sg" {
-  name   = "fargate-sg"          # 安全组名称
+  name   = "dd-fargate-sg"          # 安全组名称
   vpc_id = aws_vpc.main.id       # 关联VPC
 
   ingress {
@@ -186,7 +186,7 @@ resource "aws_ecs_task_definition" "bookstore_task" {
 }
 
 resource "aws_cloudwatch_log_group" "ecs_bookstore" {
-  name              = "/ecs/bookstore"
+  name              = "/ecs/dd-bookstore"
   retention_in_days = 7
 }
 
@@ -195,7 +195,7 @@ resource "aws_cloudwatch_log_group" "ecs_bookstore" {
 # ---------------------------
 
 resource "aws_ecs_service" "bookstore_service" {
-  name            = "bookstore-service"           # 服务名称
+  name            = "dd-ookstore-service"           # 服务名称
   cluster         = aws_ecs_cluster.cluster.id    # 所属ECS集群
   task_definition = aws_ecs_task_definition.bookstore_task.arn  # 关联任务定义
   launch_type     = "FARGATE"                      # 启动类型为Fargate无服务器容器
