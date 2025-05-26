@@ -1,5 +1,5 @@
 provider "aws" {
-  region = "ap-southeast-1"  # 指定AWS区域，新加坡区域
+  region = "ap-southeast-2"  # 指定AWS区域，新加坡区域
 }
 
 # ---------------------------
@@ -13,7 +13,7 @@ resource "aws_vpc" "main" {
 resource "aws_subnet" "subnet" {
   vpc_id            = aws_vpc.main.id       # 关联到上面创建的VPC
   cidr_block        = "10.0.1.0/24"         # 子网的IP地址范围
-  availability_zone = "ap-southeast-1a"     # 可用区，指定在该区域的某个分区
+  availability_zone = "ap-southeast-2a"     # 可用区，指定在该区域的某个分区
   map_public_ip_on_launch = true             # 启动实例时自动分配公网IP
 }
 
