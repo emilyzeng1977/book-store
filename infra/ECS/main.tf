@@ -87,7 +87,7 @@ resource "aws_iam_policy" "ssm_read_policy" {
           "ssm:GetParameter",
           "ssm:GetParameters"
         ],
-        Resource = aws_ssm_parameter.datadog_api_key.arn  # 仅允许访问指定参数
+        Resource = data.aws_ssm_parameter.datadog_api_key.arn  # 仅允许访问指定参数
       }
     ]
   })
@@ -100,14 +100,14 @@ resource "aws_iam_role_policy_attachment" "ssm_read_policy_attachment" {
 }
 
 # ---------------------------
-# SSM 参数存储，保存Datadog API Key
+# SSM 参数存储，获取Datadog API Key
 # ---------------------------
 
-resource "aws_ssm_parameter" "datadog_api_key" {
-  name  = "/datadog/api_key"    # 参数名称，建议用路径规范
-  type  = "SecureString"        # 安全字符串，参数会加密存储
-  value = "your_datadog_api_key_here"  # 真实的密钥值
+data "aws_ssm_parameter" "datadog_api_key" {
+  name = "/datadog/api_key"
+  with_decryption = true  # 如果是 SecureString，必须设为 true 才能解密
 }
+
 
 # ---------------------------
 # ECS 服务所用安全组
@@ -137,32 +137,57 @@ resource "aws_security_group" "ecs_sg" {
 # ---------------------------
 
 resource "aws_ecs_task_definition" "bookstore_task" {
-  family                   = "bookstore-task"          # 任务族名称
-  requires_compatibilities = ["FARGATE"]               # 使用Fargate启动
-  network_mode             = "awsvpc"                  # 网络模式，支持弹性网络接口
-  cpu                      = "256"                     # CPU资源配置
-  memory                   = "512"                     # 内存资源配置
-  execution_role_arn       = aws_iam_role.ecs_task_exec_role.arn  # 任务执行角色
+  family                   = "bookstore-task"
+  requires_compatibilities = ["FARGATE"]
+  network_mode             = "awsvpc"
+  cpu                      = "512"
+  memory                   = "1024"
+  execution_role_arn       = aws_iam_role.ecs_task_exec_role.arn
 
-  # 容器定义，包含镜像、端口映射
   container_definitions = jsonencode([
     {
-      name  = "bookstore"          # 容器名称
-      image = "zengemily79/book-store:1.0.0-SNAPSHOT"  # 镜像地址
+      name      = "bookstore"
+      image     = "zengemily79/book-store:1.0.0-SNAPSHOT"
       portMappings = [
         {
-          containerPort = 5000     # 容器内端口
-          hostPort      = 5000     # 映射到宿主机端口
+          containerPort = 5000
+          hostPort      = 5000
         }
+      ]
+    },
+    {
+      name      = "datadog-agent"
+      image     = "public.ecr.aws/datadog/agent:7"  // 或 "public.ecr.aws/datadog/agent:latest"
+      essential = false
+      environment = [
+        { name = "ECS_FARGATE", value = "true" },
+        { name = "DD_LOGS_ENABLED", value = "true" },
+        { name = "DD_APM_ENABLED", value = "true" },
+        { name = "DD_PROCESS_AGENT_ENABLED", value = "true" },
+        { name = "DD_SYSTEM_PROBE_ENABLED", value = "false" }
       ]
       secrets = [
         {
-          name      = "DD_API_KEY"                     # 容器内的环境变量名
-          valueFrom = aws_ssm_parameter.datadog_api_key.arn  # 关联SSM参数的ARN，注入机密
+          name      = "DD_API_KEY"
+          valueFrom = data.aws_ssm_parameter.datadog_api_key.arn
         }
       ]
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          awslogs-region        = "ap-southeast-2"
+          awslogs-group         = "/ecs/bookstore"
+          awslogs-stream-prefix = "datadog-agent"
+        }
+      }
     }
   ])
+  depends_on = [aws_cloudwatch_log_group.ecs_bookstore]
+}
+
+resource "aws_cloudwatch_log_group" "ecs_bookstore" {
+  name              = "/ecs/bookstore"
+  retention_in_days = 7
 }
 
 # ---------------------------
