@@ -12,7 +12,7 @@ resource "aws_vpc" "main" {
 
 resource "aws_subnet" "subnet" {
   vpc_id            = aws_vpc.main.id       # 关联到上面创建的VPC
-  cidr_block        = "10.0.1.0/24"         # 子网的IP地址范围
+  cidr_block        = "10.0.2.0/24"         # 子网的IP地址范围
   availability_zone = "ap-southeast-2a"     # 可用区，指定在该区域的某个分区
   map_public_ip_on_launch = true             # 启动实例时自动分配公网IP
 }
@@ -41,7 +41,7 @@ resource "aws_route_table_association" "assoc" {
 # ---------------------------
 
 resource "aws_ecs_cluster" "cluster" {
-  name = "fargate-cluster"  # ECS集群名称
+  name = "dd-fargate-cluster"  # ECS集群名称
 }
 
 # ---------------------------
@@ -49,7 +49,7 @@ resource "aws_ecs_cluster" "cluster" {
 # ---------------------------
 
 resource "aws_iam_role" "ecs_task_exec_role" {
-  name = "ecsTaskExecutionRole"  # 角色名称
+  name = "dd-ecsTaskExecutionRole"  # 角色名称
 
   # 定义允许哪些服务可以假设此角色，这里是ecs-tasks服务
   assume_role_policy = jsonencode({
@@ -75,7 +75,7 @@ resource "aws_iam_role_policy_attachment" "ecs_exec_policy" {
 # ---------------------------
 
 resource "aws_iam_policy" "ssm_read_policy" {
-  name        = "AllowSSMParameterRead"
+  name        = "dd-AllowSSMParameterRead"
   description = "允许 ECS 任务读取 SSM 参数存储中的参数"
 
   policy = jsonencode({
@@ -137,11 +137,11 @@ resource "aws_security_group" "ecs_sg" {
 # ---------------------------
 
 resource "aws_ecs_task_definition" "bookstore_task" {
-  family                   = "bookstore-task"
+  family                   = "dd-bookstore-task"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
-  cpu                      = "512"
-  memory                   = "1024"
+  cpu                      = "256"
+  memory                   = "512"
   execution_role_arn       = aws_iam_role.ecs_task_exec_role.arn
 
   container_definitions = jsonencode([
