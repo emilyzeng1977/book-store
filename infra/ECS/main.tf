@@ -184,6 +184,7 @@ resource "aws_ecs_service" "bookstore_service" {
 
   # 依赖角色策略的附加，确保权限已准备好
   depends_on = [
-    aws_iam_role_policy_attachment.ecs_exec_policy  # 确保角色权限已附加后再创建服务
+    aws_iam_role_policy_attachment.ecs_exec_policy,
+    aws_iam_role_policy_attachment.ssm_read_policy_attachment
   ]
 }
