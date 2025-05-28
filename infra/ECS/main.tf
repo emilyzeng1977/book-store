@@ -10,30 +10,75 @@ resource "aws_vpc" "main" {
   cidr_block = "10.0.0.0/16"  # VPC的IP地址范围
 }
 
-resource "aws_subnet" "subnet" {
+resource "aws_subnet" "public_subnet" {
   vpc_id            = aws_vpc.main.id       # 关联到上面创建的VPC
   cidr_block        = "10.0.1.0/24"         # 子网的IP地址范围
   availability_zone = "ap-southeast-2a"     # 可用区，指定在该区域的某个分区
-  map_public_ip_on_launch = true             # 启动实例时自动分配公网IP
+#   map_public_ip_on_launch = true             # 启动实例时自动分配公网IP
+}
+
+resource "aws_subnet" "public_subnet_b" {
+  vpc_id            = aws_vpc.main.id       # 关联到上面创建的VPC
+  cidr_block        = "10.0.4.0/24"         # 子网的IP地址范围
+  availability_zone = "ap-southeast-2b"     # 可用区，指定在该区域的某个分区
+#   map_public_ip_on_launch = true             # 启动实例时自动分配公网IP
+}
+
+resource "aws_subnet" "private_subnet" {
+  vpc_id            = aws_vpc.main.id       # 关联到上面创建的VPC
+  cidr_block        = "10.0.3.0/24"         # 子网的IP地址范围
+  availability_zone = "ap-southeast-2a"     # 可用区，指定在该区域的某个分区
+#   map_public_ip_on_launch = true             # 启动实例时自动分配公网IP
 }
 
 resource "aws_internet_gateway" "igw" {
   vpc_id = aws_vpc.main.id  # 为VPC创建并绑定一个Internet网关，实现互联网访问
 }
 
-resource "aws_route_table" "rt" {
+resource "aws_route_table" "public_rt" {
   vpc_id = aws_vpc.main.id  # 创建路由表并关联VPC
 }
 
 resource "aws_route" "internet_access" {
-  route_table_id         = aws_route_table.rt.id   # 路由表ID
+  route_table_id         = aws_route_table.public_rt.id   # 路由表ID
   destination_cidr_block = "0.0.0.0/0"             # 所有目的地（默认路由）
   gateway_id             = aws_internet_gateway.igw.id  # 通过互联网网关路由流量
 }
 
-resource "aws_route_table_association" "assoc" {
-  subnet_id      = aws_subnet.subnet.id  # 将路由表关联到子网，使子网内实例有对应路由规则
-  route_table_id = aws_route_table.rt.id
+resource "aws_route_table_association" "public_assoc" {
+  subnet_id      = aws_subnet.public_subnet.id  # 将路由表关联到子网，使子网内实例有对应路由规则
+  route_table_id = aws_route_table.public_rt.id
+}
+
+### 弹性 IP (Elastic IP)：为 NAT Gateway 准备 ###
+resource "aws_eip" "nat" {
+    domain = "vpc"
+}
+
+### NAT Gateway：用于私有子网访问外网 ###
+resource "aws_nat_gateway" "main" {
+  allocation_id = aws_eip.nat.id                      # 使用上面创建的弹性 IP
+  subnet_id     = aws_subnet.public_subnet.id         # 部署到公有子网
+}
+
+### 私有子网的路由表 ###
+resource "aws_route_table" "private_rt" {
+  vpc_id = aws_vpc.main.id                                # 关联到 VPC
+
+  route {
+    cidr_block     = "0.0.0.0/0"                          # 将所有流量路由到 NAT Gateway
+    nat_gateway_id = aws_nat_gateway.main.id              # 使用上面创建的 NAT Gateway
+  }
+
+  tags = {
+    Name = "Emily-private-rt"                    # 为路由表命名
+  }
+}
+
+### 将私有子网与路由表关联 ###
+resource "aws_route_table_association" "private_asso" {
+  subnet_id      = aws_subnet.private_subnet.id # 指定子网
+  route_table_id = aws_route_table.private_rt.id          # 指定路由表
 }
 
 # ---------------------------
@@ -48,8 +93,8 @@ resource "aws_ecs_cluster" "cluster" {
 # ECS 任务执行角色（IAM Role）
 # ---------------------------
 
-resource "aws_iam_role" "ecs_task_exec_role" {
-  name = "ecsTaskExecutionRole"  # 角色名称
+resource "aws_iam_role" "ecs_task_exec_role1" {
+  name = "ecsTaskExecutionRole1"  # 角色名称
 
   # 定义允许哪些服务可以假设此角色，这里是ecs-tasks服务
   assume_role_policy = jsonencode({
@@ -66,7 +111,7 @@ resource "aws_iam_role" "ecs_task_exec_role" {
 
 # 附加Amazon提供的托管策略，赋予任务拉取镜像、写日志等权限
 resource "aws_iam_role_policy_attachment" "ecs_exec_policy" {
-  role       = aws_iam_role.ecs_task_exec_role.name
+  role       = aws_iam_role.ecs_task_exec_role1.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
@@ -82,7 +127,7 @@ resource "aws_security_group" "ecs_sg" {
     from_port   = 5000           # 入站规则，允许TCP 5000端口访问
     to_port     = 5000
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]  # 允许所有IP访问（公网）
+    security_groups = [aws_security_group.alb_sg.id]
   }
 
   egress {
@@ -103,7 +148,7 @@ resource "aws_ecs_task_definition" "bookstore_task" {
   network_mode             = "awsvpc"                  # 网络模式，支持弹性网络接口
   cpu                      = "256"                     # CPU资源配置
   memory                   = "512"                     # 内存资源配置
-  execution_role_arn       = aws_iam_role.ecs_task_exec_role.arn  # 任务执行角色
+  execution_role_arn       = aws_iam_role.ecs_task_exec_role1.arn  # 任务执行角色
 
   # 容器定义，包含镜像、端口映射
   container_definitions = jsonencode([
@@ -121,23 +166,122 @@ resource "aws_ecs_task_definition" "bookstore_task" {
 }
 
 # ---------------------------
-# ECS 服务，负责运行和管理任务
+# 1. ALB Security Group
 # ---------------------------
+resource "aws_security_group" "alb_sg" {
+  name        = "alb-sg"
+  description = "Allow HTTP inbound from internet"
+  vpc_id      = aws_vpc.main.id
 
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+# ---------------------------
+# 2. Application Load Balancer
+# ---------------------------
+resource "aws_lb" "ecs_alb" {
+  name               = "bookstore-alb"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.alb_sg.id]
+  subnets            = [aws_subnet.public_subnet.id, aws_subnet.public_subnet_b.id]
+}
+
+# ---------------------------
+# 3. Target Group
+# ---------------------------
+resource "aws_lb_target_group" "ecs_tg" {
+  name        = "bookstore-tg1"
+  port        = 5000
+  protocol    = "HTTP"
+  target_type = "ip"
+  vpc_id      = aws_vpc.main.id
+
+  health_check {
+    path     = "/books"
+    protocol = "HTTP"
+  }
+}
+
+# ---------------------------
+# 4. ALB Listener
+# ---------------------------
+resource "aws_lb_listener" "ecs_listener" {
+  load_balancer_arn = aws_lb.ecs_alb.arn
+  port              = 80
+  protocol          = "HTTP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.ecs_tg.arn
+  }
+}
+
+# ---------------------------
+# 5. ECS Fargate Service (with ALB)
+# ---------------------------
 resource "aws_ecs_service" "bookstore_service" {
-  name            = "bookstore-service"           # 服务名称
-  cluster         = aws_ecs_cluster.cluster.id    # 所属ECS集群
-  task_definition = aws_ecs_task_definition.bookstore_task.arn  # 关联任务定义
-  launch_type     = "FARGATE"                      # 启动类型为Fargate无服务器容器
-  desired_count   = 1                              # 期望启动1个任务实例
+  name            = "bookstore-service-v2"
+  cluster         = aws_ecs_cluster.cluster.id
+  task_definition = aws_ecs_task_definition.bookstore_task.arn
+  launch_type     = "FARGATE"
+  desired_count   = 1
 
   network_configuration {
-    subnets          = [aws_subnet.subnet.id]     # 任务运行的子网
-    assign_public_ip = true                        # 分配公网IP，方便外部访问
-    security_groups  = [aws_security_group.ecs_sg.id]  # 绑定安全组
+    subnets          = [aws_subnet.private_subnet.id]
+    assign_public_ip = false
+    security_groups  = [aws_security_group.ecs_sg.id]
+  }
+
+  load_balancer {
+    target_group_arn = aws_lb_target_group.ecs_tg.arn
+    container_name   = "bookstore"
+    container_port   = 5000
   }
 
   depends_on = [
-    aws_iam_role_policy_attachment.ecs_exec_policy  # 确保角色权限已附加后再创建服务
+    aws_iam_role_policy_attachment.ecs_exec_policy,
+    aws_lb_listener.ecs_listener
   ]
 }
+
+
+
+
+
+
+
+
+# -----------------------------------------------------------
+# ECS 服务，负责运行和管理任务，没用ALB的情况，服务放在public subnet
+# -----------------------------------------------------------
+
+# resource "aws_ecs_service" "bookstore_service" {
+#   name            = "bookstore-service"           # 服务名称
+#   cluster         = aws_ecs_cluster.cluster.id    # 所属ECS集群
+#   task_definition = aws_ecs_task_definition.bookstore_task.arn  # 关联任务定义
+#   launch_type     = "FARGATE"                      # 启动类型为Fargate无服务器容器
+#   desired_count   = 1                              # 期望启动1个任务实例
+#
+#   network_configuration {
+#     subnets          = [aws_subnet.public_subnet.id]     # 任务运行的子网
+#     assign_public_ip = true                        # 分配公网IP，方便外部访问
+#     security_groups  = [aws_security_group.ecs_sg.id]  # 绑定安全组
+#   }
+#
+#   depends_on = [
+#     aws_iam_role_policy_attachment.ecs_exec_policy  # 确保角色权限已附加后再创建服务
+#   ]
+# }
