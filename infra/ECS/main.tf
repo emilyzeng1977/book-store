@@ -145,6 +145,17 @@ resource "aws_ecs_task_definition" "bookstore_task" {
   execution_role_arn       = aws_iam_role.ecs_task_exec_role.arn
 
   container_definitions = jsonencode([
+     {
+      name      = "firelens"
+      image     = "amazon/aws-for-fluent-bit:latest"
+      essential = true
+      firelensConfiguration = {
+        type    = "fluentbit"
+        options = {
+          enable-ecs-log-metadata = "true"
+        }
+      }
+    },
     {
       name      = "bookstore"
       image     = "zengemily79/book-store:1.0.0-SNAPSHOT"
@@ -154,17 +165,38 @@ resource "aws_ecs_task_definition" "bookstore_task" {
           hostPort      = 5000
         }
       ]
+      secrets = [
+        {
+          name      = "DD_API_KEY"
+          valueFrom = data.aws_ssm_parameter.datadog_api_key.arn
+        }
+      ]
+      logConfiguration = {
+        logDriver = "awsfirelens"
+        options = {
+          Name       = "datadog"
+          apikey     = "${DD_API_KEY}"
+          dd_service = "book-store"
+          dd_source  = "ecs"
+          dd_tags    = "env:dev,team:platform"
+          TLS        = "on"
+          provider   = "ecs"
+        }
+      }
     },
     {
       name      = "datadog-agent"
-      image     = "public.ecr.aws/datadog/agent:7"  // 或 "public.ecr.aws/datadog/agent:latest"
+      image     = "public.ecr.aws/datadog/agent:latest"
       essential = false
       environment = [
+        { name = "DD_SERVICE", value = "bookstore" },
         { name = "ECS_FARGATE", value = "true" },
-        { name = "DD_LOGS_ENABLED", value = "true" },
-        { name = "DD_APM_ENABLED", value = "true" },
+        { name = "DD_LOGS_ENABLED", value = "false" },
+        { name = "DD_APM_ENABLED", value = "false" },
+        { name = "DD_REMOTE_CONFIG_ENABLED", value = "false" },
         { name = "DD_PROCESS_AGENT_ENABLED", value = "true" },
-        { name = "DD_SYSTEM_PROBE_ENABLED", value = "false" }
+        { name = "DD_SYSTEM_PROBE_ENABLED", value = "false" },
+        { name = "DD_DOGSTATSD_NON_LOCAL_TRAFFIC", value = "true" }
       ]
       secrets = [
         {
@@ -176,26 +208,41 @@ resource "aws_ecs_task_definition" "bookstore_task" {
         logDriver = "awslogs"
         options = {
           awslogs-region        = "ap-southeast-2"
-          awslogs-group         = "/ecs/bookstore"
+          awslogs-group         = "/ecs/dd-bookstore"
           awslogs-stream-prefix = "datadog-agent"
         }
       }
     }
   ])
-  depends_on = [aws_cloudwatch_log_group.ecs_bookstore]
+  depends_on = [aws_cloudwatch_log_group.ecs_dd_bookstore,
+    aws_cloudwatch_log_group.ecs_aws_bookstore,
+    aws_cloudwatch_log_group.ecs_firelens_bookstore
+  ]
 }
 
-resource "aws_cloudwatch_log_group" "ecs_bookstore" {
+resource "aws_cloudwatch_log_group" "ecs_dd_bookstore" {
   name              = "/ecs/dd-bookstore"
   retention_in_days = 7
 }
+
+resource "aws_cloudwatch_log_group" "ecs_aws_bookstore" {
+  name              = "/ecs/aws-bookstore"
+  retention_in_days = 7
+}
+
+resource "aws_cloudwatch_log_group" "ecs_firelens_bookstore" {
+  name              = "/ecs/firelens-bookstore"
+  retention_in_days = 7
+}
+
+
 
 # ---------------------------
 # ECS 服务，负责运行和管理任务
 # ---------------------------
 
 resource "aws_ecs_service" "bookstore_service" {
-  name            = "dd-ookstore-service"           # 服务名称
+  name            = "dd-bookstore-service"          # 服务名称
   cluster         = aws_ecs_cluster.cluster.id    # 所属ECS集群
   task_definition = aws_ecs_task_definition.bookstore_task.arn  # 关联任务定义
   launch_type     = "FARGATE"                      # 启动类型为Fargate无服务器容器
