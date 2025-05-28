@@ -165,17 +165,11 @@ resource "aws_ecs_task_definition" "bookstore_task" {
           hostPort      = 5000
         }
       ]
-      secrets = [
-        {
-          name      = "DD_API_KEY"
-          valueFrom = data.aws_ssm_parameter.datadog_api_key.arn
-        }
-      ]
       logConfiguration = {
         logDriver = "awsfirelens"
         options = {
           Name       = "datadog"
-          apikey     = "DD_API_KEY"
+          apikey     = data.aws_ssm_parameter.datadog_api_key.value
           dd_service = "book-store"
           dd_source  = "ecs"
           dd_tags    = "env:dev,team:platform"
