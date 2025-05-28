@@ -175,7 +175,7 @@ resource "aws_ecs_task_definition" "bookstore_task" {
         logDriver = "awsfirelens"
         options = {
           Name       = "datadog"
-          apikey     = "${DD_API_KEY}"
+          apikey     = "DD_API_KEY"
           dd_service = "book-store"
           dd_source  = "ecs"
           dd_tags    = "env:dev,team:platform"
