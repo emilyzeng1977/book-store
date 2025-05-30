@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>CORS Test</title>
+</head>
+<body>
+  <h1>Click to Fetch Data</h1>
+  <button onclick="fetchData()">Fetch</button>
+
+  <p id="output">Response will appear here:</p>
+
+  <script>
+    function fetchData() {
+      fetch("http://localhost:5000/api/data")
+        .then(response => response.json())
+        .then(data => {
+          console.log("Data:", data);
+          const output = document.getElementById("output");
+          output.textContent += " " + JSON.stringify(data);
+        })
+        .catch(error => {
+          console.error("Error:", error);
+          const output = document.getElementById("output");
+          output.textContent += " [Error fetching data]";
+        });
+    }
+  </script>
+</body>
+</html>
