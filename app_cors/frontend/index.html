@@ -4,24 +4,49 @@
   <title>CORS Test</title>
 </head>
 <body>
-  <h1>Click to Fetch Data</h1>
-  <button onclick="fetchData()">Fetch</button>
+  <h1>CORS Test Page</h1>
+
+  <button onclick="fetchGet()">Fetch (GET)</button>
+  <button onclick="fetchPost()">Fetch (POST)</button>
 
   <p id="output">Response will appear here:</p>
 
   <script>
-    function fetchData() {
+    function appendOutput(message) {
+      const output = document.getElementById("output");
+      output.textContent += "\n" + message;
+    }
+
+    function fetchGet() {
       fetch("http://localhost:5000/api/data")
         .then(response => response.json())
         .then(data => {
-          console.log("Data:", data);
-          const output = document.getElementById("output");
-          output.textContent += " " + JSON.stringify(data);
+          console.log("GET Data:", data);
+          appendOutput("GET: " + JSON.stringify(data));
         })
         .catch(error => {
-          console.error("Error:", error);
-          const output = document.getElementById("output");
-          output.textContent += " [Error fetching data]";
+          console.error("GET Error:", error);
+          appendOutput("GET: [Error fetching data]");
+        });
+    }
+
+    function fetchPost() {
+      fetch("http://localhost:5000/api/data", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Custom-Header": "example123" // 这会触发预检
+        },
+        body: JSON.stringify({ message: "Hello from client!" })
+      })
+        .then(response => response.json())
+        .then(data => {
+          console.log("POST Data:", data);
+          appendOutput("POST: " + JSON.stringify(data));
+        })
+        .catch(error => {
+          console.error("POST Error:", error);
+          appendOutput("POST: [Error fetching data]");
         });
     }
   </script>
