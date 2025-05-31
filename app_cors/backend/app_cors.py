@@ -24,6 +24,7 @@ def handle_data():
         response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
         response.headers["Access-Control-Allow-Headers"] = "Content-Type, X-Custom-Header"
         response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Access-Control-Max-Age"] = "5"
         return response
 
     # 其他请求（GET、POST）继续保留自动检查（由 flask_cors 处理）
