@@ -2,51 +2,75 @@
 <html>
 <head>
   <title>CORS Test</title>
+  <style>
+    .success {
+      color: green;
+    }
+    .error {
+      color: red;
+    }
+  </style>
 </head>
 <body>
   <h1>CORS Test Page</h1>
 
-  <button onclick="fetchGet()">Fetch (GET)</button>
-  <button onclick="fetchPost()">Fetch (POST)</button>
+  <button onclick="fetchPostNoOptions()">POST (No OPTIONS)</button>
+  <button onclick="fetchPostWithOptions()">POST (With OPTIONS)</button>
+  <button onclick="clearOutput()">Clear Output</button>
 
-  <p id="output">Response will appear here:</p>
+  <ul id="output"></ul>
 
   <script>
-    function appendOutput(message) {
+    function appendOutput(message, isSuccess = true) {
       const output = document.getElementById("output");
-      output.textContent += "\n" + message;
+      const li = document.createElement("li");
+      li.textContent = message;
+      li.className = isSuccess ? "success" : "error";
+      output.appendChild(li);
     }
 
-    function fetchGet() {
-      fetch("http://localhost:5000/api/data")
+    function clearOutput() {
+      document.getElementById("output").innerHTML = "";
+    }
+
+    // Simple POST — 不会触发预检
+    function fetchPostNoOptions() {
+      fetch("http://localhost:5000/api/data", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded" // 简单请求类型
+        },
+        body: "message=hello"
+      })
         .then(response => response.json())
         .then(data => {
-          console.log("GET Data:", data);
-          appendOutput("GET: " + JSON.stringify(data));
+          console.log("POST (No OPTIONS) Data:", data);
+          appendOutput("POST (No OPTIONS): " + JSON.stringify(data), true);
         })
         .catch(error => {
-          console.error("GET Error:", error);
-          appendOutput("GET: [Error fetching data]");
+          console.error("POST (No OPTIONS) Error:", error);
+          appendOutput("POST (No OPTIONS): [Error fetching data]", false);
         });
     }
 
-    function fetchPost() {
+    // 带 X-Custom-Header，会触发预检（OPTIONS）
+    function fetchPostWithOptions() {
       fetch("http://localhost:5000/api/data", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-Custom-Header": "example123" // 这会触发预检
+          "X-Custom-Header": "example123"
         },
-        body: JSON.stringify({ message: "Hello from client!" })
+        body: JSON.stringify({ message: "Hello with OPTIONS" })
       })
         .then(response => response.json())
         .then(data => {
-          console.log("POST Data:", data);
-          appendOutput("POST: " + JSON.stringify(data));
+          console.log("POST (With OPTIONS) Data:", data);
+          appendOutput("POST (With OPTIONS): " + JSON.stringify(data), true);
         })
         .catch(error => {
-          console.error("POST Error:", error);
-          appendOutput("POST: [Error fetching data]");
+          console.error("POST (With OPTIONS) Error:", error);
+          appendOutput("POST (With OPTIONS): [Error fetching data]", false);
         });
     }
   </script>
