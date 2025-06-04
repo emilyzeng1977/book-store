@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,28 +7,39 @@
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-  <h1>图书管理系统</h1>
 
-  <ul class="book-list" id="book-list">
-    <!-- Book items will be added here dynamically -->
-  </ul>
-
-  <div>
-    <button class="btn" onclick="openAddBookModal()">添加书籍</button>
+  <!-- 登录页面 -->
+  <div id="login-page">
+    <h2>登录</h2>
+    <form id="login-form">
+      <label>用户名：</label>
+      <input type="text" id="username" required><br><br>
+      <label>密码：</label>
+      <input type="password" id="password" required><br><br>
+      <button type="submit" class="btn">登录</button>
+    </form>
   </div>
 
-  <div id="addEditBookModal" class="modal">
-    <div class="modal-content">
-      <span class="close" onclick="closeAddEditBookModal()">&times;</span>
-      <h2 id="modal-title">添加书籍</h2>
-      <form id="book-form">
-        <input type="hidden" id="book-id">
-        <label for="title">书名：</label>
-        <input type="text" id="title" name="title" required><br><br>
-        <label for="author">作者：</label>
-        <input type="text" id="author" name="author" required><br><br>
-        <button type="submit" class="btn">保存</button>
-      </form>
+  <!-- 主页面（登录成功后才显示） -->
+  <div id="main-page" style="display: none;">
+    <h1>图书管理系统</h1>
+    <ul class="book-list" id="book-list"></ul>
+    <div><button class="btn" onclick="openAddBookModal()">添加书籍</button></div>
+
+    <!-- 添加/编辑书籍模态框 -->
+    <div id="addEditBookModal" class="modal">
+      <div class="modal-content">
+        <span class="close" onclick="closeAddEditBookModal()">&times;</span>
+        <h2 id="modal-title">添加书籍</h2>
+        <form id="book-form">
+          <input type="hidden" id="book-id">
+          <label>书名：</label>
+          <input type="text" id="title" required><br><br>
+          <label>作者：</label>
+          <input type="text" id="author" required><br><br>
+          <button type="submit" class="btn">保存</button>
+        </form>
+      </div>
     </div>
   </div>
 

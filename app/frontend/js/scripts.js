@@ -1,29 +1,56 @@
+const loginForm = document.getElementById('login-form');
+const loginPage = document.getElementById('login-page');
+const mainPage = document.getElementById('main-page');
 const bookList = document.getElementById('book-list');
 const bookForm = document.getElementById('book-form');
 const modal = document.getElementById('addEditBookModal');
-let nextId = 3; // ID for the next book to be added
 
-const apiUrl = 'http://127.0.0.1:5000/books';
+let authToken = null;
+const apiUrl = 'http://localhost:5000/books';
 
-// Function to display books
+// 登录事件
+loginForm.addEventListener('submit', async function (e) {
+  e.preventDefault();
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value;
+
+  const res = await fetch('http://localhost:5000/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password })
+  });
+
+  if (res.ok) {
+    const data = await res.json();
+    authToken = data.token || null;  // 假设返回的是 { token: "xxx" }
+
+    loginPage.style.display = 'none';
+    mainPage.style.display = 'block';
+
+    displayBooks();
+  } else {
+    alert('登录失败，请检查用户名或密码');
+  }
+});
+
+// 显示图书
 async function displayBooks() {
-  const response = await fetch(apiUrl);
-  const books = await response.json();
+  const res = await fetch(apiUrl, {
+    headers: {
+      'Content-Type': 'application/json',
+      ...(authToken && { 'Authorization': `Bearer ${authToken}` })
+    }
+  });
+  const books = await res.json();
   bookList.innerHTML = '';
-
   books.books.forEach(book => {
     const li = document.createElement('li');
-    li.className = 'book-item';
-
-    // 显示 title, author, 和 _id
     li.innerHTML = `
-      <strong>书名:</strong> ${book.title}<br>
-      <strong>作者:</strong> ${book.author}<br>
-      <strong>ID:</strong> ${book._id}<br>
+      <strong>${book.title}</strong> by ${book.author}<br>
+      ID: ${book._id}<br>
       <button class="btn" onclick="openEditBookModal('${book._id}')">编辑</button>
       <button class="btn btn-danger" onclick="deleteBook('${book._id}')">删除</button>
     `;
-
     bookList.appendChild(li);
   });
 }
