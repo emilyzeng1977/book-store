@@ -8,6 +8,19 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from pymongo import MongoClient, errors
 
+import hmac
+import hashlib
+import base64
+import boto3
+from botocore.exceptions import ClientError
+
+import jwt
+from jwt.exceptions import InvalidTokenError
+from jose import jwk
+from jose.exceptions import JWTError, ExpiredSignatureError, JWTClaimsError
+
+from functools import wraps
+
 # Flask 应用初始化
 app = Flask(__name__)
 
@@ -34,6 +47,20 @@ atlas_mongo_host = get_env_variable("ATLAS_MONGO_HOST", "emily-demo.unlcmad.mong
 atlas_mongo_app_name = get_env_variable("ATLAS_MONGO_APP_NAME", "emily-demo")
 atlas_mongo_db = get_env_variable("ATLAS_MONGO_DB", "book-store")
 
+# 需要在环境变量里配置，或者硬编码也行（不推荐）
+aws_region = get_env_variable('AWS_REGION', 'ap-southeast-2')
+cognito_user_pool_id = get_env_variable('COGNITO_USER_POOL_ID', 'ap-southeast-2_09CeFqveZ')
+cognito_client_id = get_env_variable('COGNITO_CLIENT_ID', '1ktmj89m2g93t3pbb2u24mbl6s')
+cognito_client_secret = get_env_variable('COGNITO_CLIENT_SECRET', 'v3anmuq5t83p1b8i32m3r54hcjctjjgtl9de46fgkf54a5iqi2r')
+
+cognito_issuer = f'https://cognito-idp.{aws_region}.amazonaws.com/{cognito_user_pool_id}'
+jwks_url  = f'{cognito_issuer}/.well-known/jwks.json'
+
+# 下载并缓存 JWKs
+jwks = requests.get(jwks_url).json()['keys']
+
+cognito_client = boto3.client('cognito-idp', region_name=aws_region)
+
 # 生成 MongoDB 连接字符串
 atlas_mongo_uri = (
     f"mongodb+srv://{atlas_mongo_user}:{atlas_mongo_password}@{atlas_mongo_host}"
@@ -50,9 +77,116 @@ except Exception as e:
     logging.error(f"Error connecting to MongoDB: {e}")
     raise
 
+
+
+def get_secret_hash(username):
+    message = username + cognito_client_id
+    dig = hmac.new(cognito_client_secret.encode('utf-8'),
+                   message.encode('utf-8'),
+                   hashlib.sha256).digest()
+    return base64.b64encode(dig).decode()
+
+def get_public_key(token):
+    try:
+        headers = jwt.get_unverified_header(token)
+    except JWTError as e:
+        raise Exception(f"Invalid token header: {e}")
+
+    kid = headers.get('kid')
+    if not kid:
+        raise Exception("Token header missing 'kid'")
+
+    key_data = next((k for k in jwks if k.get('kid') == kid), None)
+    if not key_data:
+        raise Exception("Public key not found in JWKs")
+
+    try:
+        # return jwk.construct(key_data)
+        key_obj = jwk.construct(key_data)
+        return key_obj.to_pem().decode('utf-8')  # ✅ 返回 PEM 格式的 key
+    except Exception as e:
+        raise Exception(f"Failed to construct public key from JWK: {e}")
+
+def verify_token(token):
+    try:
+        public_key = get_public_key(token)
+        decoded = jwt.decode(
+            token,
+            key=public_key,
+            algorithms=["RS256"],
+            issuer=cognito_issuer
+        )
+        return decoded
+    except ExpiredSignatureError:
+        raise Exception("Token has expired")
+    except JWTClaimsError as e:
+        raise Exception(f"Invalid claims: {e}")
+    except JWTError as e:
+        raise Exception(f"JWT decode error: {e}")
+    except Exception as e:
+        raise Exception(f"Token verification failed: {e}")
+
+def token_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({'error': 'Missing token'}), 401
+        token = auth_header.split(' ')[1]
+        try:
+            verify_token(token)
+        except Exception as e:
+            return jsonify({'error': 'Invalid token', 'details': str(e)}), 401
+        return f(*args, **kwargs)
+    return decorated
+
 # ----------------------
 # 路由定义
 # ----------------------
+
+@app.route('/login', methods=['POST'])
+def login():
+    """
+    调用 AWS Cognito AdminInitiateAuth 进行用户登录认证
+    请求示例(JSON):
+    {
+        "username": "tom",
+        "password": "your_password"
+    }
+    返回示例(JSON):
+    {
+        "AuthenticationResult": {
+            "AccessToken": "...",
+            "IdToken": "...",
+            "RefreshToken": "...",
+            ...
+        }
+    }
+    """
+    data = request.json
+    if not data or 'username' not in data or 'password' not in data:
+        return jsonify({'error': 'username and password required'}), 400
+
+    username = data['username']
+    password = data['password']
+
+    try:
+        resp = cognito_client.admin_initiate_auth(
+            UserPoolId=cognito_user_pool_id,
+            ClientId=cognito_client_id,
+            AuthFlow='ADMIN_NO_SRP_AUTH',
+            AuthParameters={
+                'USERNAME': username,
+                'PASSWORD': password,
+                'SECRET_HASH': get_secret_hash(username)
+            }
+        )
+        return jsonify(resp['AuthenticationResult'])
+    except ClientError as e:
+        # 返回Cognito错误信息给客户端
+        error_code = e.response['Error']['Code']
+        error_message = e.response['Error']['Message']
+        return jsonify({'error': error_code, 'message': error_message}), 401
 
 @app.route('/greet', methods=['GET'])
 def greet():
@@ -82,6 +216,22 @@ def get_books():
       ]
     }
     """
+    # auth_header = request.headers.get('Authorization')
+    # if not auth_header or not auth_header.startswith('Bearer '):
+    #     return jsonify({'error': 'Missing or invalid Authorization header'}), 401
+    #
+    # token = auth_header.split(' ')[1]
+    #
+    # try:
+    #     # 验证 Token
+    #     verify_token(token)
+    # except InvalidTokenError as e:
+    #     return jsonify({'error': 'Invalid token', 'details': str(e)}), 401
+    # except Exception as e:
+    #     return jsonify({'error': 'Token verification failed', 'details': str(e)}), 401
+    #
+    # # Token 验证通过，继续处理查询
+
     try:
         books = []
         for book in collection.find().max_time_ms(1000):
@@ -96,6 +246,7 @@ def get_books():
 
 
 @app.route('/books/<string:book_id>', methods=['GET'])
+@token_required
 def get_book(book_id):
     """
     根据书籍ID获取书籍详情

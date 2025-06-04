@@ -10,12 +10,20 @@ async function displayBooks() {
   const response = await fetch(apiUrl);
   const books = await response.json();
   bookList.innerHTML = '';
+
   books.books.forEach(book => {
     const li = document.createElement('li');
     li.className = 'book-item';
-    li.innerHTML = `<strong>${book.title}</strong> by ${book.author}
-      <button class="btn" onclick="openEditBookModal(${book.id})">编辑</button>
-      <button class="btn btn-danger" onclick="deleteBook(${book.id})">删除</button>`;
+
+    // 显示 title, author, 和 _id
+    li.innerHTML = `
+      <strong>书名:</strong> ${book.title}<br>
+      <strong>作者:</strong> ${book.author}<br>
+      <strong>ID:</strong> ${book._id}<br>
+      <button class="btn" onclick="openEditBookModal('${book._id}')">编辑</button>
+      <button class="btn btn-danger" onclick="deleteBook('${book._id}')">删除</button>
+    `;
+
     bookList.appendChild(li);
   });
 }
@@ -38,7 +46,7 @@ async function openEditBookModal(id) {
   const book = await response.json();
   if (!book) return;
   document.getElementById('modal-title').textContent = '编辑书籍';
-  document.getElementById('book-id').value = book.id;
+  document.getElementById('book-id').value = book._id;
   document.getElementById('title').value = book.title;
   document.getElementById('author').value = book.author;
   modal.style.display = 'block';
@@ -47,7 +55,7 @@ async function openEditBookModal(id) {
 // Function to add or edit book
 bookForm.addEventListener('submit', async function(event) {
   event.preventDefault();
-  const id = parseInt(document.getElementById('book-id').value);
+  const id = document.getElementById('book-id').value;
   const title = document.getElementById('title').value.trim();
   const author = document.getElementById('author').value.trim();
 
