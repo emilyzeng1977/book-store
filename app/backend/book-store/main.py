@@ -4,7 +4,7 @@ import socket
 
 import requests
 from bson.objectid import ObjectId
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, make_response
 from flask_cors import CORS
 from pymongo import MongoClient, errors
 
@@ -15,7 +15,6 @@ import boto3
 from botocore.exceptions import ClientError
 
 import jwt
-from jwt.exceptions import InvalidTokenError
 from jose import jwk
 from jose.exceptions import JWTError, ExpiredSignatureError, JWTClaimsError
 
@@ -25,7 +24,9 @@ from functools import wraps
 app = Flask(__name__)
 
 # 跨域支持，开发阶段全开放，生产环境建议指定域名
-CORS(app)
+CORS(app,
+     supports_credentials=True,
+     origins=["http://localhost:3000"])  # 完整指定端口
 
 # 日志配置，INFO级别，方便查看运行信息
 logging.basicConfig(
@@ -77,8 +78,6 @@ except Exception as e:
     logging.error(f"Error connecting to MongoDB: {e}")
     raise
 
-
-
 def get_secret_hash(username):
     message = username + cognito_client_id
     dig = hmac.new(cognito_client_secret.encode('utf-8'),
@@ -126,18 +125,36 @@ def verify_token(token):
     except Exception as e:
         raise Exception(f"Token verification failed: {e}")
 
+
 def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
+        token = None
+
+        # 先检查 Authorization header
         auth_header = request.headers.get('Authorization')
-        if not auth_header or not auth_header.startswith('Bearer '):
+        if auth_header and auth_header.startswith('Bearer '):
+            token = auth_header.split(' ')[1]
+
+        # 如果 header 没有 token，再检查 Cookie 里的 Authorization
+        if not token:
+            cookie_auth = request.cookies.get('Authorization')
+            if cookie_auth and cookie_auth.startswith('Bearer '):
+                token = cookie_auth.split(' ')[1]
+            else:
+                # 如果 cookie 里的 Authorization 不是 Bearer 开头，直接用整个值作为 token
+                token = cookie_auth
+
+        if not token:
             return jsonify({'error': 'Missing token'}), 401
-        token = auth_header.split(' ')[1]
+
         try:
             verify_token(token)
         except Exception as e:
             return jsonify({'error': 'Invalid token', 'details': str(e)}), 401
+
         return f(*args, **kwargs)
+
     return decorated
 
 # ----------------------
@@ -146,23 +163,6 @@ def token_required(f):
 
 @app.route('/login', methods=['POST'])
 def login():
-    """
-    调用 AWS Cognito AdminInitiateAuth 进行用户登录认证
-    请求示例(JSON):
-    {
-        "username": "tom",
-        "password": "your_password"
-    }
-    返回示例(JSON):
-    {
-        "AuthenticationResult": {
-            "AccessToken": "...",
-            "IdToken": "...",
-            "RefreshToken": "...",
-            ...
-        }
-    }
-    """
     data = request.json
     if not data or 'username' not in data or 'password' not in data:
         return jsonify({'error': 'username and password required'}), 400
@@ -181,7 +181,20 @@ def login():
                 'SECRET_HASH': get_secret_hash(username)
             }
         )
-        return jsonify(resp['AuthenticationResult'])
+        access_token = resp['AuthenticationResult']['AccessToken']
+        response = make_response(jsonify({'message': 'Login successful'}))
+        # 设置cookie
+        response.set_cookie(
+            'Authorization',
+            f'Bearer {access_token}',
+            httponly=False,  # JS 不能读取，防止XSS
+            secure=False,  # 本地测试用 False，生产环境请改成 True (https)
+            samesite='Lax',  # CSRF防护，可根据需求改为 'Strict'
+            max_age=3600  # token有效期，比如1小时
+        )
+        return response
+
+        # return jsonify(resp['AuthenticationResult'])
     except ClientError as e:
         # 返回Cognito错误信息给客户端
         error_code = e.response['Error']['Code']
@@ -205,6 +218,7 @@ def greet():
     return jsonify({'message': greeting_message})
 
 @app.route('/books', methods=['GET'])
+@token_required
 def get_books():
     """
     获取所有书籍列表，设置查询超时1秒
@@ -216,22 +230,6 @@ def get_books():
       ]
     }
     """
-    # auth_header = request.headers.get('Authorization')
-    # if not auth_header or not auth_header.startswith('Bearer '):
-    #     return jsonify({'error': 'Missing or invalid Authorization header'}), 401
-    #
-    # token = auth_header.split(' ')[1]
-    #
-    # try:
-    #     # 验证 Token
-    #     verify_token(token)
-    # except InvalidTokenError as e:
-    #     return jsonify({'error': 'Invalid token', 'details': str(e)}), 401
-    # except Exception as e:
-    #     return jsonify({'error': 'Token verification failed', 'details': str(e)}), 401
-    #
-    # # Token 验证通过，继续处理查询
-
     try:
         books = []
         for book in collection.find().max_time_ms(1000):
@@ -264,6 +262,7 @@ def get_book(book_id):
 
 
 @app.route('/books', methods=['POST'])
+@token_required
 def add_book():
     """
     添加一本新书，要求传入 JSON，必须包含title和author字段
@@ -286,6 +285,7 @@ def add_book():
 
 
 @app.route('/books/<string:book_id>', methods=['PUT'])
+@token_required
 def update_book(book_id):
     """
     根据书籍ID更新书籍信息，支持title和author字段更新
@@ -327,6 +327,7 @@ def update_book(book_id):
 
 
 @app.route('/books/<string:book_id>', methods=['DELETE'])
+@token_required
 def delete_book(book_id):
     """
     根据书籍ID删除书籍
