@@ -1,8 +1,10 @@
+import { API_BASE_URL, USE_LOCAL_STORAGE_FOR_TOKEN } from './config.js';
+
 const bookList = document.getElementById('book-list');
 const bookForm = document.getElementById('book-form');
 const modal = document.getElementById('addEditBookModal');
 
-const apiUrl = 'http://localhost:5000/books';
+const apiUrl = `${API_BASE_URL}/books`;
 
 // 加载所有书籍并显示
 async function displayBooks() {
