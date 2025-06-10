@@ -402,7 +402,7 @@ def call_price():
 
 @app.route('/', methods=['GET'])
 def root():
-    return jsonify({"message": "Hello, world!"}), 200
+    return jsonify({"message": "Hello, bookStore!"}), 200
 
 def get_version() -> str:
     """读取版本号文件version.txt，如果不存在则返回 unknown"""
