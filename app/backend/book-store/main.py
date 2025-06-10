@@ -48,10 +48,12 @@ cognito_user_pool_id = get_env_variable('COGNITO_USER_POOL_ID', 'ap-southeast-2_
 cognito_client_id = get_env_variable('COGNITO_CLIENT_ID', '1ktmj89m2g93t3pbb2u24mbl6s')
 cognito_client_secret = get_env_variable('COGNITO_CLIENT_SECRET', 'v3anmuq5t83p1b8i32m3r54hcjctjjgtl9de46fgkf54a5iqi2r')
 
-cors_origins_str = get_env_variable('CORS_ORIGINS', 'http://localhost:3000,http://abc.com')
-cors_origins = [origin.strip() for origin in cors_origins_str.split(',') if origin.strip()]
+cors_origins_str = get_env_variable('CORS_ORIGINS', 'http://localhost:3000')
 cookie_domain = get_env_variable('COOKIE_DOMAIN', 'localhost')
 
+auth_enable = get_env_variable('AUTH_ENABLE', 'false').lower() == 'true'
+
+cors_origins = [origin.strip() for origin in cors_origins_str.split(',') if origin.strip()]
 CORS(app,
      supports_credentials=True,
      origins=cors_origins) # # 需要完整指定端口
@@ -131,6 +133,9 @@ def verify_token(token):
 def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
+        if not auth_enable:
+            # 如果关闭认证开关，直接执行目标函数
+            return f(*args, **kwargs)
         token = None
 
         # 先检查 Authorization header
@@ -390,12 +395,14 @@ def call_price():
         logging.error(f"Error calling price service: {e}")
         return jsonify({'message': 'Failed to call price service', 'error': str(e)}), 500
 
+# @app.route('/healthz', methods=['GET'])
+# def health_check():
+#     """健康检查接口，返回服务状态"""
+#     return jsonify({"status": "ok"}), 200
 
-@app.route('/healthz', methods=['GET'])
-def health_check():
-    """健康检查接口，返回服务状态"""
-    return jsonify({"status": "ok"}), 200
-
+@app.route('/', methods=['GET'])
+def root():
+    return jsonify({"message": "Hello, world!"}), 200
 
 def get_version() -> str:
     """读取版本号文件version.txt，如果不存在则返回 unknown"""

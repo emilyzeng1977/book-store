@@ -10,7 +10,7 @@ resource "aws_vpc" "main" {
   cidr_block = "10.0.0.0/16"  # VPC的IP地址范围
 }
 
-resource "aws_subnet" "public_subnet" {
+resource "aws_subnet" "public_subnet_a" {
   vpc_id            = aws_vpc.main.id       # 关联到上面创建的VPC
   cidr_block        = "10.0.1.0/24"         # 子网的IP地址范围
   availability_zone = "ap-southeast-2a"     # 可用区，指定在该区域的某个分区
@@ -28,7 +28,6 @@ resource "aws_subnet" "private_subnet" {
   vpc_id            = aws_vpc.main.id       # 关联到上面创建的VPC
   cidr_block        = "10.0.3.0/24"         # 子网的IP地址范围
   availability_zone = "ap-southeast-2a"     # 可用区，指定在该区域的某个分区
-#   map_public_ip_on_launch = true             # 启动实例时自动分配公网IP
 }
 
 resource "aws_internet_gateway" "igw" {
@@ -46,7 +45,7 @@ resource "aws_route" "internet_access" {
 }
 
 resource "aws_route_table_association" "public_assoc" {
-  subnet_id      = aws_subnet.public_subnet.id  # 将路由表关联到子网，使子网内实例有对应路由规则
+  subnet_id      = aws_subnet.public_subnet_a.id  # 将路由表关联到子网，使子网内实例有对应路由规则
   route_table_id = aws_route_table.public_rt.id
 }
 
@@ -58,7 +57,7 @@ resource "aws_eip" "nat" {
 ### NAT Gateway：用于私有子网访问外网 ###
 resource "aws_nat_gateway" "main" {
   allocation_id = aws_eip.nat.id                      # 使用上面创建的弹性 IP
-  subnet_id     = aws_subnet.public_subnet.id         # 部署到公有子网
+  subnet_id     = aws_subnet.public_subnet_a.id         # 部署到公有子网
 }
 
 ### 私有子网的路由表 ###
@@ -204,7 +203,7 @@ resource "aws_ecs_task_definition" "bookstore_task" {
     {
       name  = "bookstore"          # 容器名称
       # image = "zengemily79/book-store:1.0.0-SNAPSHOT"  # 镜像地址
-      image = "zengemily79/book-store:1.4.0-SNAPSHOT"  # 镜像地址
+      image = "zengemily79/book-store:1.5.0-SNAPSHOT"  # 镜像地址
       portMappings = [
         {
           containerPort = 5000     # 容器内端口
@@ -254,7 +253,7 @@ resource "aws_lb" "ecs_alb" {
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb_sg.id]
-  subnets            = [aws_subnet.public_subnet.id, aws_subnet.public_subnet_b.id]
+  subnets            = [aws_subnet.public_subnet_a.id, aws_subnet.public_subnet_b.id]
 }
 
 # ---------------------------
