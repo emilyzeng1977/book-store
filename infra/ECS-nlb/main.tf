@@ -83,6 +83,13 @@ resource "aws_security_group" "ecs_service_sg" {
   vpc_id      = aws_vpc.main.id
 
   ingress {
+    from_port   = 5000
+    to_port     = 5000
+    protocol    = "tcp"
+    cidr_blocks = ["10.0.0.0/16"]
+  }
+
+  ingress {
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
@@ -98,14 +105,14 @@ resource "aws_security_group" "ecs_service_sg" {
 }
 
 # ---------------------------
-# 4. ECS Fargate Cluster + Nginx Task
+# 4. ECS Fargate Cluster + book-store Task
 # ---------------------------
 resource "aws_ecs_cluster" "main" {
-  name = "nginx-cluster"
+  name = "book-store-cluster"
 }
 
-resource "aws_ecs_task_definition" "nginx" {
-  family                   = "nginx-task"
+resource "aws_ecs_task_definition" "book-store" {
+  family                   = "book-store-task"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
   cpu                      = "256"
@@ -113,13 +120,12 @@ resource "aws_ecs_task_definition" "nginx" {
 
   container_definitions = jsonencode([
     {
-      name      = "nginx"
+      name      = "book-store"
       image     = "zengemily79/book-store:latest"
       portMappings = [
         {
           containerPort = 5000
-          hostPort      = 5000
-
+          protocol      = "tcp"
         }
       ]
     }
@@ -127,8 +133,8 @@ resource "aws_ecs_task_definition" "nginx" {
 }
 
 resource "aws_lb_target_group" "ecs_tg" {
-  name        = "nginx-tg"
-  port        = 80
+  name        = "book-store-tg"
+  port        = 5000
   protocol    = "TCP"
   vpc_id      = aws_vpc.main.id
   target_type = "ip"
@@ -153,11 +159,11 @@ resource "aws_lb_listener" "nlb_listener" {
   }
 }
 
-resource "aws_ecs_service" "nginx" {
-  name            = "nginx-service"
+resource "aws_ecs_service" "book-store" {
+  name            = "book-store-service"
   cluster         = aws_ecs_cluster.main.id
   launch_type     = "FARGATE"
-  task_definition = aws_ecs_task_definition.nginx.arn
+  task_definition = aws_ecs_task_definition.book-store.arn
   desired_count   = 1
 
   network_configuration {
@@ -168,8 +174,8 @@ resource "aws_ecs_service" "nginx" {
 
   load_balancer {
     target_group_arn = aws_lb_target_group.ecs_tg.arn
-    container_name   = "nginx"
-    container_port   = 80
+    container_name   = "book-store"
+    container_port   = 5000
   }
 
   depends_on = [aws_lb_listener.nlb_listener]
@@ -185,7 +191,7 @@ resource "aws_apigatewayv2_vpc_link" "vpc_link" {
 }
 
 resource "aws_apigatewayv2_api" "http_api" {
-  name          = "nginx-api"
+  name          = "book-store-api"
   protocol_type = "HTTP"
 }
 
