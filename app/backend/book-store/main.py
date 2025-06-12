@@ -14,19 +14,13 @@ import base64
 import boto3
 from botocore.exceptions import ClientError
 
-import jwt
-from jose import jwk
+from jose import jwk, jwt
 from jose.exceptions import JWTError, ExpiredSignatureError, JWTClaimsError
 
 from functools import wraps
 
 # Flask 应用初始化
 app = Flask(__name__)
-
-# 跨域支持，开发阶段全开放，生产环境建议指定域名
-CORS(app,
-     supports_credentials=True,
-     origins=["http://localhost:3000"])  # 完整指定端口
 
 # 日志配置，INFO级别，方便查看运行信息
 logging.basicConfig(
@@ -53,6 +47,16 @@ aws_region = get_env_variable('AWS_REGION', 'ap-southeast-2')
 cognito_user_pool_id = get_env_variable('COGNITO_USER_POOL_ID', 'ap-southeast-2_09CeFqveZ')
 cognito_client_id = get_env_variable('COGNITO_CLIENT_ID', '1ktmj89m2g93t3pbb2u24mbl6s')
 cognito_client_secret = get_env_variable('COGNITO_CLIENT_SECRET', 'v3anmuq5t83p1b8i32m3r54hcjctjjgtl9de46fgkf54a5iqi2r')
+
+cors_origins_str = get_env_variable('CORS_ORIGINS', 'http://localhost:3000')
+cookie_domain = get_env_variable('COOKIE_DOMAIN', 'localhost')
+
+auth_enable = get_env_variable('AUTH_ENABLE', 'false').lower() == 'true'
+
+cors_origins = [origin.strip() for origin in cors_origins_str.split(',') if origin.strip()]
+CORS(app,
+     supports_credentials=True,
+     origins=cors_origins) # # 需要完整指定端口
 
 cognito_issuer = f'https://cognito-idp.{aws_region}.amazonaws.com/{cognito_user_pool_id}'
 jwks_url  = f'{cognito_issuer}/.well-known/jwks.json'
@@ -129,6 +133,9 @@ def verify_token(token):
 def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
+        if not auth_enable:
+            # 如果关闭认证开关，直接执行目标函数
+            return f(*args, **kwargs)
         token = None
 
         # 先检查 Authorization header
@@ -181,17 +188,21 @@ def login():
                 'SECRET_HASH': get_secret_hash(username)
             }
         )
-        access_token = resp['AuthenticationResult']['AccessToken']
-        response = make_response(jsonify({'message': 'Login successful'}))
+        auth_result = resp['AuthenticationResult']
+        access_token = auth_result['AccessToken']
+
+        response = make_response(jsonify(auth_result))
+
         # 设置cookie
-        response.set_cookie(
-            'Authorization',
-            f'Bearer {access_token}',
-            httponly=False,  # JS 不能读取，防止XSS
-            secure=False,  # 本地测试用 False，生产环境请改成 True (https)
-            samesite='Lax',  # CSRF防护，可根据需求改为 'Strict'
-            max_age=3600  # token有效期，比如1小时
-        )
+        # response.set_cookie(
+        #     'Authorization',
+        #     f'Bearer {access_token}',
+        #     httponly=True,  # JS 不能读取，防止XSS
+        #     secure=False,  # 本地测试用 False, 生产环境请改成 True (只会在 HTTPS 请求中被浏览器接收或发送) ,当samesite为None时必须为True
+        #     samesite='Lax',  # Lax|CSRF防护，可根据需求改为 'Strict', 注意，为None时候必须要HTTPS
+        #     # domain=cookie_domain,
+        #     max_age=3600  # token有效期，比如1小时
+        # )
         return response
 
         # return jsonify(resp['AuthenticationResult'])
@@ -214,7 +225,7 @@ def greet():
     except socket.gaierror:
         local_ip = "127.0.0.1"
 
-    greeting_message = f"Hello, {name}! This server's IP address is {local_ip}."
+    greeting_message = f"Hello, {name}! This server's IP address is {local_ip} 2."
     return jsonify({'message': greeting_message})
 
 @app.route('/books', methods=['GET'])
@@ -384,12 +395,14 @@ def call_price():
         logging.error(f"Error calling price service: {e}")
         return jsonify({'message': 'Failed to call price service', 'error': str(e)}), 500
 
+# @app.route('/healthz', methods=['GET'])
+# def health_check():
+#     """健康检查接口，返回服务状态"""
+#     return jsonify({"status": "ok"}), 200
 
-@app.route('/healthz', methods=['GET'])
-def health_check():
-    """健康检查接口，返回服务状态"""
-    return jsonify({"status": "ok"}), 200
-
+@app.route('/', methods=['GET'])
+def root():
+    return jsonify({"message": "Hello, bookStore!"}), 200
 
 def get_version() -> str:
     """读取版本号文件version.txt，如果不存在则返回 unknown"""

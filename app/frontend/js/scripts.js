@@ -1,14 +1,33 @@
+import { API_BASE_URL, USE_LOCAL_STORAGE_FOR_TOKEN } from './config.js';
+
 const bookList = document.getElementById('book-list');
 const bookForm = document.getElementById('book-form');
 const modal = document.getElementById('addEditBookModal');
 
-const apiUrl = 'http://localhost:5000/books';
+const apiUrl = `${API_BASE_URL}/books`;
+
+// 带鉴权的 fetch 封装
+async function fetchWithAuth(url, options = {}) {
+  const headers = options.headers || {};
+
+  if (USE_LOCAL_STORAGE_FOR_TOKEN) {
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      headers['Authorization'] = token;
+    }
+  }
+
+  return fetch(url, {
+    ...options,
+    headers,
+    credentials: 'include',  // 确保 Cookie 也被发送（生产环境）
+  });
+}
 
 // 加载所有书籍并显示
 async function displayBooks() {
-  const res = await fetch(apiUrl, {
+  const res = await fetchWithAuth(apiUrl, {
     method: 'GET',
-    credentials: 'include',
     headers: { 'Content-Type': 'application/json' }
   });
 
@@ -42,7 +61,7 @@ function openAddBookModal() {
 
 // 打开编辑书籍弹窗
 async function openEditBookModal(id) {
-  const res = await fetch(`${apiUrl}/${id}`, { credentials: 'include' });
+  const res = await fetchWithAuth(`${apiUrl}/${id}`, { method: 'GET' });
 
   if (!res.ok) {
     alert('获取书籍信息失败');
@@ -65,11 +84,10 @@ function closeAddEditBookModal() {
 
 // 添加书籍请求
 async function addBook(bookData) {
-  const res = await fetch(apiUrl, {
+  const res = await fetchWithAuth(apiUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(bookData),
-    credentials: 'include'
+    body: JSON.stringify(bookData)
   });
 
   if (!res.ok) {
@@ -81,11 +99,10 @@ async function addBook(bookData) {
 
 // 编辑书籍请求
 async function editBook(id, bookData) {
-  const res = await fetch(`${apiUrl}/${id}`, {
+  const res = await fetchWithAuth(`${apiUrl}/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(bookData),
-    credentials: 'include'
+    body: JSON.stringify(bookData)
   });
 
   if (!res.ok) {
@@ -97,9 +114,8 @@ async function editBook(id, bookData) {
 
 // 删除书籍
 async function deleteBook(id) {
-  const res = await fetch(`${apiUrl}/${id}`, {
-    method: 'DELETE',
-    credentials: 'include'
+  const res = await fetchWithAuth(`${apiUrl}/${id}`, {
+    method: 'DELETE'
   });
 
   if (!res.ok) {

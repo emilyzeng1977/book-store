@@ -10,7 +10,7 @@ resource "aws_vpc" "main" {
   cidr_block = "10.0.0.0/16"  # VPC的IP地址范围
 }
 
-resource "aws_subnet" "public_subnet" {
+resource "aws_subnet" "public_subnet_a" {
   vpc_id            = aws_vpc.main.id       # 关联到上面创建的VPC
   cidr_block        = "10.0.1.0/24"         # 子网的IP地址范围
   availability_zone = "ap-southeast-2a"     # 可用区，指定在该区域的某个分区
@@ -28,7 +28,6 @@ resource "aws_subnet" "private_subnet" {
   vpc_id            = aws_vpc.main.id       # 关联到上面创建的VPC
   cidr_block        = "10.0.3.0/24"         # 子网的IP地址范围
   availability_zone = "ap-southeast-2a"     # 可用区，指定在该区域的某个分区
-#   map_public_ip_on_launch = true             # 启动实例时自动分配公网IP
 }
 
 resource "aws_internet_gateway" "igw" {
@@ -46,7 +45,7 @@ resource "aws_route" "internet_access" {
 }
 
 resource "aws_route_table_association" "public_assoc" {
-  subnet_id      = aws_subnet.public_subnet.id  # 将路由表关联到子网，使子网内实例有对应路由规则
+  subnet_id      = aws_subnet.public_subnet_a.id  # 将路由表关联到子网，使子网内实例有对应路由规则
   route_table_id = aws_route_table.public_rt.id
 }
 
@@ -58,7 +57,7 @@ resource "aws_eip" "nat" {
 ### NAT Gateway：用于私有子网访问外网 ###
 resource "aws_nat_gateway" "main" {
   allocation_id = aws_eip.nat.id                      # 使用上面创建的弹性 IP
-  subnet_id     = aws_subnet.public_subnet.id         # 部署到公有子网
+  subnet_id     = aws_subnet.public_subnet_a.id         # 部署到公有子网
 }
 
 ### 私有子网的路由表 ###
@@ -90,10 +89,10 @@ resource "aws_ecs_cluster" "cluster" {
 }
 
 # ---------------------------
-# ECS 任务执行角色（IAM Role）
+# ECS 任务执行角色（IAM Role）拉镜像、写日志
 # ---------------------------
 
-resource "aws_iam_role" "ecs_task_exec_role1" {
+resource "aws_iam_role" "ecs_task_exec_role" {
   name = "ecsTaskExecutionRole1"  # 角色名称
 
   # 定义允许哪些服务可以假设此角色，这里是ecs-tasks服务
@@ -111,8 +110,54 @@ resource "aws_iam_role" "ecs_task_exec_role1" {
 
 # 附加Amazon提供的托管策略，赋予任务拉取镜像、写日志等权限
 resource "aws_iam_role_policy_attachment" "ecs_exec_policy" {
-  role       = aws_iam_role.ecs_task_exec_role1.name
+  role       = aws_iam_role.ecs_task_exec_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+}
+
+# ---------------------------
+# ECS 容器内部代码执行 AWS 操作（如 Cognito）
+# ---------------------------
+
+resource "aws_iam_role" "ecs_task_role" {
+  name = "ecsTaskRole"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [{
+      Effect = "Allow",
+      Principal = {
+        Service = "ecs-tasks.amazonaws.com"
+      },
+      Action = "sts:AssumeRole"
+    }]
+  })
+}
+
+# ✅ Attach Cognito Policy (NEW)
+resource "aws_iam_policy" "cognito_access_policy" {
+  name        = "CognitoAccessPolicy"
+  description = "Allow ECS task to call Cognito authentication APIs"
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "cognito-idp:AdminInitiateAuth",
+          "cognito-idp:InitiateAuth",
+          "cognito-idp:RespondToAuthChallenge",
+          "cognito-idp:GetUser"
+        ],
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "ecs_task_role_cognito" {
+  role       = aws_iam_role.ecs_task_role.name
+  policy_arn = aws_iam_policy.cognito_access_policy.arn
 }
 
 # ---------------------------
@@ -148,19 +193,31 @@ resource "aws_ecs_task_definition" "bookstore_task" {
   network_mode             = "awsvpc"                  # 网络模式，支持弹性网络接口
   cpu                      = "256"                     # CPU资源配置
   memory                   = "512"                     # 内存资源配置
-  execution_role_arn       = aws_iam_role.ecs_task_exec_role1.arn  # 任务执行角色
+  execution_role_arn       = aws_iam_role.ecs_task_exec_role.arn  # 拉镜像、写日志
+  task_role_arn            = aws_iam_role.ecs_task_role.arn
+
+  depends_on = [aws_cloudwatch_log_group.bookstore]
 
   # 容器定义，包含镜像、端口映射
   container_definitions = jsonencode([
     {
       name  = "bookstore"          # 容器名称
-      image = "zengemily79/book-store:1.0.0-SNAPSHOT"  # 镜像地址
+      # image = "zengemily79/book-store:1.0.0-SNAPSHOT"  # 镜像地址
+      image = "zengemily79/book-store:1.5.0-SNAPSHOT"  # 镜像地址
       portMappings = [
         {
           containerPort = 5000     # 容器内端口
           hostPort      = 5000     # 映射到宿主机端口
         }
       ]
+      logConfiguration = {
+      logDriver = "awslogs"
+      options = {
+        "awslogs-group"         = "/ecs/bookstore"                  # CloudWatch Log Group 名称
+        "awslogs-region"        = "ap-southeast-2"                  # 区域
+        "awslogs-stream-prefix" = "bookstore"                       # 日志流前缀，方便区分不同任务或容器
+      }
+    }
     }
   ])
 }
@@ -196,7 +253,7 @@ resource "aws_lb" "ecs_alb" {
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb_sg.id]
-  subnets            = [aws_subnet.public_subnet.id, aws_subnet.public_subnet_b.id]
+  subnets            = [aws_subnet.public_subnet_a.id, aws_subnet.public_subnet_b.id]
 }
 
 # ---------------------------
@@ -257,31 +314,12 @@ resource "aws_ecs_service" "bookstore_service" {
   ]
 }
 
+resource "aws_cloudwatch_log_group" "bookstore" {
+  name              = "/ecs/bookstore"
+  retention_in_days = 1   # 日志保留天数，根据需求调整
+}
 
-
-
-
-
-
-
-# -----------------------------------------------------------
-# ECS 服务，负责运行和管理任务，没用ALB的情况，服务放在public subnet
-# -----------------------------------------------------------
-
-# resource "aws_ecs_service" "bookstore_service" {
-#   name            = "bookstore-service"           # 服务名称
-#   cluster         = aws_ecs_cluster.cluster.id    # 所属ECS集群
-#   task_definition = aws_ecs_task_definition.bookstore_task.arn  # 关联任务定义
-#   launch_type     = "FARGATE"                      # 启动类型为Fargate无服务器容器
-#   desired_count   = 1                              # 期望启动1个任务实例
-#
-#   network_configuration {
-#     subnets          = [aws_subnet.public_subnet.id]     # 任务运行的子网
-#     assign_public_ip = true                        # 分配公网IP，方便外部访问
-#     security_groups  = [aws_security_group.ecs_sg.id]  # 绑定安全组
-#   }
-#
-#   depends_on = [
-#     aws_iam_role_policy_attachment.ecs_exec_policy  # 确保角色权限已附加后再创建服务
-#   ]
-# }
+output "alb_dns_name" {
+  description = "The DNS name of the ALB"
+  value       = aws_lb.ecs_alb.dns_name
+}

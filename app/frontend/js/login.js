@@ -1,3 +1,5 @@
+import { API_BASE_URL, USE_LOCAL_STORAGE_FOR_TOKEN } from './config.js';
+
 const loginForm = document.getElementById('login-form');
 
 loginForm.addEventListener('submit', async function (e) {
@@ -5,7 +7,7 @@ loginForm.addEventListener('submit', async function (e) {
   const username = document.getElementById('username').value.trim();
   const password = document.getElementById('password').value;
 
-  const res = await fetch('http://localhost:5000/login', {
+  const res = await fetch(`${API_BASE_URL}/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username, password }),
@@ -14,7 +16,16 @@ loginForm.addEventListener('submit', async function (e) {
 
   if (res.ok) {
     const data = await res.json();
-    // 假设服务器返回 token 或者设置了 cookie 以保持登录状态
+
+    if (USE_LOCAL_STORAGE_FOR_TOKEN) {
+      // 开发环境：将 TokenType + AccessToken 存入 localStorage 供前端使用
+      const token = `${data.TokenType} ${data.AccessToken}`;
+      localStorage.setItem('authToken', token);
+    } else {
+      // 生产环境：推荐由后端设置 HttpOnly Cookie，前端不存 token
+      console.log('生产环境：token 已由 Cookie 存储');
+    }
+
     // 登录成功后跳转到主页
     window.location.href = 'index.html';
     console.log('登录成功', data);
