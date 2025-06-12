@@ -2,7 +2,7 @@ resource "aws_lb" "nlb" {
   name = "${var.project_name}-nlb"
   internal           = true
   load_balancer_type = "network"
-  subnets            = [aws_subnet.private.id]
+  subnets            = [module.network.private_subnet_id]
   security_groups    = [aws_security_group.ecs_service_sg.id]
 }
 
@@ -10,7 +10,7 @@ resource "aws_lb_target_group" "ecs_tg" {
   name        = "book-store-tg"
   port        = 5000
   protocol    = "TCP"
-  vpc_id      = aws_vpc.main.id
+  vpc_id      = module.network.vpc_id
   target_type = "ip"
 }
 
