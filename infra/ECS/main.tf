@@ -93,7 +93,7 @@ resource "aws_ecs_cluster" "cluster" {
 # ---------------------------
 
 resource "aws_iam_role" "ecs_task_exec_role" {
-  name = "ecsTaskExecutionRole1"  # 角色名称
+  name = "ecsTaskExecutionRole"  # 角色名称
 
   # 定义允许哪些服务可以假设此角色，这里是ecs-tasks服务
   assume_role_policy = jsonencode({
@@ -260,7 +260,7 @@ resource "aws_lb" "ecs_alb" {
 # 3. Target Group
 # ---------------------------
 resource "aws_lb_target_group" "ecs_tg" {
-  name        = "bookstore-tg1"
+  name        = "bookstore-tg"
   port        = 5000
   protocol    = "HTTP"
   target_type = "ip"
