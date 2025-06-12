@@ -1,6 +1,6 @@
 resource "aws_security_group" "ecs_service_sg" {
   name = "${var.project_name}-ecs-sg"
-  vpc_id = aws_vpc.main.id
+  vpc_id = module.network.vpc_id
 
   ingress {
     from_port   = 5000
