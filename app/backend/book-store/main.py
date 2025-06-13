@@ -172,7 +172,7 @@ def token_required(f):
 # 路由定义
 # ----------------------
 
-@app.route('/login', methods=['POST'])
+@app.route('/auth/login', methods=['POST'])
 @swag_from({
     'tags': ['Auth'],
     'summary': '用户登录',
@@ -641,25 +641,6 @@ def call_price():
 #     return jsonify({"status": "ok"}), 200
 
 @app.route('/', methods=['GET'])
-@swag_from({
-    'tags': ['Health Check'],
-    'summary': '服务健康检查',
-    'description': '用于验证服务是否正常运行',
-    'responses': {
-        200: {
-            'description': '服务运行正常',
-            'schema': {
-                'type': 'object',
-                'properties': {
-                    'message': {
-                        'type': 'string',
-                        'example': 'Hello, bookStore!'
-                    }
-                }
-            }
-        }
-    }
-})
 def health_check():
     return jsonify({"message": "Hello, bookStore!"}), 200
 
