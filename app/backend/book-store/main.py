@@ -19,8 +19,12 @@ from jose.exceptions import JWTError, ExpiredSignatureError, JWTClaimsError
 
 from functools import wraps
 
+from flasgger import Swagger, swag_from
+
 # Flask 应用初始化
 app = Flask(__name__)
+
+swagger = Swagger(app)
 
 # 日志配置，INFO级别，方便查看运行信息
 logging.basicConfig(
@@ -230,17 +234,65 @@ def greet():
 
 @app.route('/books', methods=['GET'])
 @token_required
-def get_books():
-    """
-    获取所有书籍列表，设置查询超时1秒
-    返回格式:
-    {
-      "books": [
-        {"_id": "...", "title": "...", "author": "..."},
-        ...
-      ]
+@swag_from({
+    'tags': ['Books'],
+    'summary': '获取所有书籍',
+    'responses': {
+        200: {
+            'description': '返回所有书籍列表',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'books': {
+                        'type': 'array',
+                        'items': {
+                            'type': 'object',
+                            'properties': {
+                                '_id': {
+                                    'type': 'string',
+                                    'example': '60f7b0b6e13a4b3e2f4a6789'
+                                },
+                                'title': {
+                                    'type': 'string',
+                                    'example': 'Book Title'
+                                },
+                                'author': {
+                                    'type': 'string',
+                                    'example': 'Author Name'
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        504: {
+            'description': '查询超时',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'error': {
+                        'type': 'string',
+                        'example': 'Query timed out'
+                    }
+                }
+            }
+        },
+        500: {
+            'description': '数据库错误',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'error': {
+                        'type': 'string',
+                        'example': 'MongoDB query error'
+                    }
+                }
+            }
+        }
     }
-    """
+})
+def get_books():
     try:
         books = []
         for book in collection.find().max_time_ms(1000):
@@ -256,10 +308,41 @@ def get_books():
 
 @app.route('/books/<string:book_id>', methods=['GET'])
 @token_required
+@swag_from({
+    'tags': ['Books'],
+    'summary': '获取指定书籍详情',
+    'parameters': [
+        {
+            'name': 'book_id',
+            'in': 'path',
+            'type': 'string',
+            'required': True,
+            'description': '书籍的 MongoDB ID'
+        }
+    ],
+    'responses': {
+        200: {
+            'description': '成功返回书籍详情',
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    '_id': {'type': 'string', 'example': '60f7b0b6e13a4b3e2f4a6789'},
+                    'title': {'type': 'string', 'example': 'Book Title'},
+                    'author': {'type': 'string', 'example': 'Author Name'}
+                }
+            }
+        },
+        400: {
+            'description': '无效的书籍 ID',
+            'schema': {'type': 'object', 'properties': {'error': {'type': 'string'}}}
+        },
+        404: {
+            'description': '未找到书籍',
+            'schema': {'type': 'object', 'properties': {'error': {'type': 'string'}}}
+        }
+    }
+})
 def get_book(book_id):
-    """
-    根据书籍ID获取书籍详情
-    """
     try:
         obj_id = ObjectId(book_id)
     except Exception:
