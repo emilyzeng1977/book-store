@@ -1,9 +1,9 @@
 resource "aws_ecs_task_definition" "book-store" {
-  family        = "${var.project_name}-task"
+  family                   = "${var.project_name}-task"
   requires_compatibilities = ["FARGATE"]
-  network_mode  = "awsvpc"
-  cpu           = "256"
-  memory        = "512"
+  network_mode             = "awsvpc"
+  cpu                      = "256"
+  memory                   = "512"
   execution_role_arn = aws_iam_role.ecs_task_exec_role.arn  # 拉镜像、写日志
   task_role_arn = aws_iam_role.ecs_task_role.arn
 
@@ -11,8 +11,8 @@ resource "aws_ecs_task_definition" "book-store" {
 
   container_definitions = jsonencode([
     {
-      name  = "book-store"
-      image = "zengemily79/book-store:latest"
+      name      = "book-store"
+      image     = "961341537777.dkr.ecr.ap-southeast-2.amazonaws.com/book-store:latest"
       portMappings = [
         {
           containerPort = 5000

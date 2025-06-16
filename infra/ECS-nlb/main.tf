@@ -3,8 +3,10 @@ provider "aws" {
 }
 
 module "network" {
-  source       = "./network-module"
-  project_name = var.project_name
+  source             = "./network-module"
+  enable_nat_gateway = true
+  enable_interface_vpc_endpoint = true
+  project_name       = var.project_name
 }
 
 module "apigw" {
