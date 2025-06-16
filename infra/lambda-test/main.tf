@@ -29,4 +29,10 @@ module "python_lambda" {
   # ✅ 推荐设置 memory 和 timeout
   memory_size = 256
   timeout     = 10
+
+  # ✅ 添加环境变量
+  environment_variables = {
+    USER_POOL_ID  = "ap-southeast-2_09CeFqveZ"
+    APP_CLIENT_ID = "1ktmj89m2g93t3pbb2u24mbl6s"
+  }
 }
