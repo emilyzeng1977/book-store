@@ -1,0 +1,69 @@
+#------------------------------------------------
+# 创建一个 Lambda 函数，包括 IAM 权限、CloudWatch 日志、打包代码等
+#------------------------------------------------
+module "authorizer_lambda" {
+  source  = "terraform-aws-modules/lambda/aws"
+  version = "~> 6.0"
+
+  function_name = "${var.project_name}-lambda"
+  handler       = "main.lambda_handler"
+  runtime       = "python3.12"
+
+  # 👇 指向 src 目录
+  source_path = "${path.module}/src"
+
+  build_in_docker = true
+
+  # ✅ 推荐设置 memory 和 timeout
+  memory_size = 256
+  timeout     = 10
+
+  attach_policy_statements = true
+
+  policy_statements = [
+    {
+      effect = "Allow"
+      actions = [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+      ]
+      resources = ["arn:aws:logs:*:*:*"]
+    }
+  ]
+
+  # ✅ 添加环境变量
+  environment_variables = {
+    USER_POOL_ID  = "ap-southeast-2_09CeFqveZ"
+    APP_CLIENT_ID = "1ktmj89m2g93t3pbb2u24mbl6s"
+  }
+}
+#------------------------------------------------
+#
+#------------------------------------------------
+resource "aws_apigatewayv2_authorizer" "lambda_auth" {
+  name                       = "lambda-authorizer"
+  api_id                     = aws_apigatewayv2_api.http_api.id
+  authorizer_type            = "REQUEST"
+  authorizer_uri             = module.authorizer_lambda.lambda_function_invoke_arn
+  identity_sources           = ["$request.header.Authorization"]
+  authorizer_payload_format_version = "2.0"
+  enable_simple_responses    = true
+}
+#------------------------------------------------
+#
+#------------------------------------------------
+resource "aws_lambda_permission" "apigw_invoke_auth" {
+  statement_id  = "AllowAPIGatewayInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = module.authorizer_lambda.lambda_function_name
+  principal     = "apigateway.amazonaws.com"
+
+  # 👇 确保匹配你的 API Gateway ARN
+  source_arn = "${aws_apigatewayv2_api.http_api.execution_arn}/*"
+
+  depends_on = [
+    module.authorizer_lambda,
+    aws_apigatewayv2_authorizer.lambda_auth
+  ]
+}

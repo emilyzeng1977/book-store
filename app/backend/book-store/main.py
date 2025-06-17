@@ -55,7 +55,7 @@ cognito_client_secret = get_env_variable('COGNITO_CLIENT_SECRET', 'v3anmuq5t83p1
 cors_origins_str = get_env_variable('CORS_ORIGINS', 'http://localhost:3000')
 cookie_domain = get_env_variable('COOKIE_DOMAIN', 'localhost')
 
-auth_enable = get_env_variable('AUTH_ENABLE', 'true').lower() == 'true'
+auth_enable = get_env_variable('AUTH_ENABLE', 'false').lower() == 'true'
 
 cors_origins = [origin.strip() for origin in cors_origins_str.split(',') if origin.strip()]
 CORS(app,
