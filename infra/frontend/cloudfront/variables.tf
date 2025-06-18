@@ -1,7 +1,3 @@
-variable "aws_region" {
-  default = "ap-southeast-2"
-}
-
 variable "project_name" {
   description = "Project name prefix for all resources"
   type        = string
@@ -9,5 +5,10 @@ variable "project_name" {
 }
 
 variable "static_website_domain_name" {
-    description = "The custom domain name used to access the static website hosted on S3 via CloudFront"
+  description = "The custom domain name used to access the static website hosted on S3 via CloudFront"
+}
+
+variable "dev_domain_name" {
+  description = "The domain name used to access the development version of the website, e.g. dev.be-devops.shop"
+  default = "dev.be-devops.shop"
 }
