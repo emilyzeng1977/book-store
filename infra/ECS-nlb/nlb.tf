@@ -3,7 +3,7 @@ resource "aws_lb" "nlb" {
   internal           = true
   load_balancer_type = "network"
   subnets            = [module.network.private_subnet_id]
-  security_groups    = [aws_security_group.ecs_service_sg.id]
+  security_groups    = [aws_security_group.nlb_sg.id]
 }
 
 resource "aws_lb_target_group" "ecs_tg" {
