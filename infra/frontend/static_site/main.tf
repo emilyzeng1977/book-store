@@ -8,7 +8,7 @@ resource "aws_s3_bucket" "static_site" {
   force_destroy = true
 
   tags = {
-    Name = "StaticWebsite"
+    Name = "${var.project_name}"
   }
 }
 
