@@ -1,10 +1,11 @@
 provider "aws" {
-  region = "ap-southeast-2"
+  region = var.aws_region
 }
 
 module "network" {
-  source       = "./network-module"
-  project_name = var.project_name
+  source              = "./network-module"
+  project_name        = var.project_name
+#   enable_vpc_flow_log = true
 }
 
 module "apigw" {
