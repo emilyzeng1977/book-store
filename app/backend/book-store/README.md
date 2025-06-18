@@ -29,4 +29,11 @@ docker push zengemily79/book-store:latest
 docker buildx build --platform linux/amd64,linux/arm64 -t zengemily79/book-store:latest --push .
 docker buildx build --platform linux/amd64,linux/arm64 -t zengemily79/book-store:1.0.0-SNAPSHOT --push .
 ```
+```commandline
+aws ecr create-repository --repository-name book-store --region ap-southeast-2
+aws ecr get-login-password --region ap-southeast-2 | docker login --username AWS --password-stdin 961341537777.dkr.ecr.ap-southeast-2.amazonaws.com/book-store
+
+```
+repositoryArn: arn:aws:ecr:ap-southeast-2:961341537777:repository/book-store
+repositoryUri: 961341537777.dkr.ecr.ap-southeast-2.amazonaws.com/book-store
 

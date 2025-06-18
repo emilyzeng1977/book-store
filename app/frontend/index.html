@@ -8,18 +8,17 @@
   <link rel="icon" href="/favicon.ico" type="image/x-icon" />
 </head>
 <body>
-
   <div id="main-page">
     <h1>图书管理系统</h1>
     <ul class="book-list" id="book-list"></ul>
     <div>
-      <button class="btn" onclick="openAddBookModal()">添加书籍</button>
+      <button class="btn" id="add-book-btn">添加书籍</button>
     </div>
 
     <!-- 添加/编辑书籍模态框 -->
     <div id="addEditBookModal" class="modal">
       <div class="modal-content">
-        <span class="close" onclick="closeAddEditBookModal()">&times;</span>
+        <span class="close" id="close-modal-btn">&times;</span>
         <h2 id="modal-title">添加书籍</h2>
         <form id="book-form">
           <input type="hidden" id="book-id" />

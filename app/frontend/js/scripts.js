@@ -3,10 +3,11 @@ import { API_BASE_URL, USE_LOCAL_STORAGE_FOR_TOKEN } from './config.js';
 const bookList = document.getElementById('book-list');
 const bookForm = document.getElementById('book-form');
 const modal = document.getElementById('addEditBookModal');
-
+const addBookBtn = document.getElementById('add-book-btn');
+const closeModalBtn = document.getElementById('close-modal-btn');
 const apiUrl = `${API_BASE_URL}/books`;
 
-// 带鉴权的 fetch 封装
+// 通用 fetch 包装（含 token 认证）
 async function fetchWithAuth(url, options = {}) {
   const headers = options.headers || {};
 
@@ -20,11 +21,11 @@ async function fetchWithAuth(url, options = {}) {
   return fetch(url, {
     ...options,
     headers,
-    credentials: 'include',  // 确保 Cookie 也被发送（生产环境）
+    credentials: 'include',
   });
 }
 
-// 加载所有书籍并显示
+// 显示所有书籍
 async function displayBooks() {
   const res = await fetchWithAuth(apiUrl, {
     method: 'GET',
@@ -36,16 +37,16 @@ async function displayBooks() {
     return;
   }
 
-  const books = await res.json();
+  const data = await res.json();
   bookList.innerHTML = '';
 
-  books.books.forEach(book => {
+  data.books.forEach(book => {
     const li = document.createElement('li');
     li.innerHTML = `
       <strong>${book.title}</strong> by ${book.author}<br>
       ID: ${book._id}<br>
-      <button class="btn" onclick="openEditBookModal('${book._id}')">编辑</button>
-      <button class="btn btn-danger" onclick="deleteBook('${book._id}')">删除</button>
+      <button class="btn edit-btn" data-id="${book._id}">编辑</button>
+      <button class="btn btn-danger delete-btn" data-id="${book._id}">删除</button>
     `;
     bookList.appendChild(li);
   });
@@ -55,21 +56,19 @@ async function displayBooks() {
 function openAddBookModal() {
   document.getElementById('modal-title').textContent = '添加书籍';
   bookForm.reset();
-  document.getElementById('book-id').value = ''; // 清空ID，标识添加操作
+  document.getElementById('book-id').value = '';
   modal.style.display = 'block';
 }
 
-// 打开编辑书籍弹窗
+// 打开编辑弹窗
 async function openEditBookModal(id) {
   const res = await fetchWithAuth(`${apiUrl}/${id}`, { method: 'GET' });
-
   if (!res.ok) {
     alert('获取书籍信息失败');
     return;
   }
 
   const book = await res.json();
-
   document.getElementById('modal-title').textContent = '编辑书籍';
   document.getElementById('book-id').value = book._id;
   document.getElementById('title').value = book.title;
@@ -89,12 +88,7 @@ async function addBook(bookData) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(bookData)
   });
-
-  if (!res.ok) {
-    alert('添加书籍失败');
-    return false;
-  }
-  return true;
+  return res.ok;
 }
 
 // 编辑书籍请求
@@ -104,12 +98,7 @@ async function editBook(id, bookData) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(bookData)
   });
-
-  if (!res.ok) {
-    alert('编辑书籍失败');
-    return false;
-  }
-  return true;
+  return res.ok;
 }
 
 // 删除书籍
@@ -126,7 +115,7 @@ async function deleteBook(id) {
   displayBooks();
 }
 
-// 表单提交事件监听
+// 表单提交处理
 bookForm.addEventListener('submit', async function(event) {
   event.preventDefault();
 
@@ -140,21 +129,39 @@ bookForm.addEventListener('submit', async function(event) {
   }
 
   const bookData = { title, author };
-
   let success = false;
+
   if (id) {
-    // 编辑书籍
     success = await editBook(id, bookData);
   } else {
-    // 添加书籍
     success = await addBook(bookData);
   }
 
   if (success) {
     displayBooks();
     closeAddEditBookModal();
+  } else {
+    alert('保存失败');
   }
 });
 
-// 页面加载时直接显示书籍列表
+// 事件代理处理 编辑/删除 按钮点击
+bookList.addEventListener('click', async (event) => {
+  const editBtn = event.target.closest('.edit-btn');
+  const deleteBtn = event.target.closest('.delete-btn');
+
+  if (editBtn) {
+    const id = editBtn.getAttribute('data-id');
+    openEditBookModal(id);
+  } else if (deleteBtn) {
+    const id = deleteBtn.getAttribute('data-id');
+    deleteBook(id);
+  }
+});
+
+// 绑定添加和关闭按钮
+addBookBtn.addEventListener('click', openAddBookModal);
+closeModalBtn.addEventListener('click', closeAddEditBookModal);
+
+// 页面初始化加载
 displayBooks();
