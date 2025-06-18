@@ -9,8 +9,9 @@ variable "project_name" {
 }
 
 variable "bucket_name" {
-  default = "my-book-store-12345678"
+  description = "The name of the S3 bucket to host the frontend static website"
 }
 
 variable "frontend_src" {
+  description = "The local path to the frontend build directory to be uploaded to the S3 bucket"
 }
