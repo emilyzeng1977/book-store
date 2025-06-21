@@ -38,5 +38,5 @@ resource "aws_flow_log" "vpc_flow" {
   log_destination      = aws_cloudwatch_log_group.vpc_flow_log_group[0].arn
   iam_role_arn         = aws_iam_role.vpc_flow_log_role[0].arn
   traffic_type         = "ALL"  # 可选值: ACCEPT, REJECT, ALL
-  vpc_id               = aws_vpc.main.id
+  vpc_id               = data.aws_vpc.main.id
 }
