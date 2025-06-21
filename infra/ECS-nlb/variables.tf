@@ -1,7 +1,7 @@
 variable "project_name" {
   description = "Project name prefix for all resources"
   type        = string
-  default     = "book-store-nlb"
+  default     = "book-store"
 }
 
 variable "aws_region" {

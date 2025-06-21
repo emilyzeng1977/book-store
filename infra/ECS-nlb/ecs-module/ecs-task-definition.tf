@@ -22,9 +22,9 @@ resource "aws_ecs_task_definition" "book-store" {
       logConfiguration = {
         logDriver = "awslogs"
         options = {
-          "awslogs-group" = "/ecs/bookstore"                  # CloudWatch Log Group 名称
-          "awslogs-region" = "ap-southeast-2"                  # 区域
-          "awslogs-stream-prefix" = "bookstore"                       # 日志流前缀，方便区分不同任务或容器
+          "awslogs-group" = aws_cloudwatch_log_group.bookstore.name # CloudWatch Log Group 名称
+          "awslogs-region" = "ap-southeast-2"                       # 区域
+          "awslogs-stream-prefix" = "bookstore"                     # 日志流前缀，方便区分不同任务或容器
         }
       }
     }

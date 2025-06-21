@@ -67,7 +67,9 @@ cognito_issuer = f'https://cognito-idp.{aws_region}.amazonaws.com/{cognito_user_
 jwks_url  = f'{cognito_issuer}/.well-known/jwks.json'
 
 # 下载并缓存 JWKs
-jwks = requests.get(jwks_url).json()['keys']
+
+if auth_enable:
+    jwks = requests.get(jwks_url).json()['keys']
 
 cognito_client = boto3.client('cognito-idp', region_name=aws_region)
 
