@@ -74,5 +74,10 @@ resource "aws_vpc_endpoint" "s3" {
   route_table_ids   = [aws_route_table.private_rt.id]
 }
 
-
+# 接收 Atlas 发起的 VPC Peering（你需要填上 Atlas 提供的 peering connection id）
+# 在请求里已经包含了VPC的ID, 所以不需要显式的提供
+resource "aws_vpc_peering_connection_accepter" "atlas_peer" {
+  vpc_peering_connection_id = "pcx-027d7792fdf057750"  # 从 Atlas UI 获取
+  auto_accept               = true
+}
 
