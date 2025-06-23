@@ -43,7 +43,7 @@ resource "aws_security_group" "vpc_endpoints" {
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
-    cidr_blocks = [var.vpc_cidr]  # 允许内部访问
+    cidr_blocks = [data.aws_vpc.main.cidr_block]  # 允许内部访问
   }
 
   egress {

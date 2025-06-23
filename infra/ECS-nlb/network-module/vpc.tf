@@ -19,7 +19,7 @@
 # }
 
 data "aws_vpc" "main" {
-  id = "vpc-064fb58bd18cc2c75"
+  id = var.vpc_id
 }
 
 resource "aws_internet_gateway" "igw" {

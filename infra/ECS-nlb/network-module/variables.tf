@@ -3,10 +3,9 @@ variable "project_name" {
   type        = string
 }
 
-variable "vpc_cidr" {
-  description = "vpc cidr"
-  type        = string
-  default     = "10.0.0.0/16"
+variable "vpc_id" {
+  description = "vpc id"
+  default     = "vpc-064fb58bd18cc2c75"
 }
 
 variable "enable_nat_gateway" {
@@ -20,10 +19,13 @@ variable "enable_interface_vpc_endpoint" {
   default     = false
   description = "Set to true to create Interface VPC Endpoint for private access to AWS services (e.g., ECR API). When enabled, the module will create the necessary ENIs and DNS settings."
 }
+
 variable "enable_vpc_flow_log" {
   description = "是否启用 VPC Flow Logs"
   type        = bool
   default     = false  # 默认不启用
 }
+
+
 
 
