@@ -7,6 +7,7 @@ from bson.objectid import ObjectId
 from flask import Flask, jsonify, request, make_response
 from flask_cors import CORS
 from pymongo import MongoClient, errors
+import certifi
 
 import hmac
 import hashlib
@@ -66,7 +67,9 @@ cognito_issuer = f'https://cognito-idp.{aws_region}.amazonaws.com/{cognito_user_
 jwks_url  = f'{cognito_issuer}/.well-known/jwks.json'
 
 # 下载并缓存 JWKs
-jwks = requests.get(jwks_url).json()['keys']
+
+if auth_enable:
+    jwks = requests.get(jwks_url).json()['keys']
 
 cognito_client = boto3.client('cognito-idp', region_name=aws_region)
 
@@ -78,10 +81,11 @@ atlas_mongo_uri = (
 
 # 初始化 MongoDB 连接
 try:
-    client = MongoClient(atlas_mongo_uri, serverSelectionTimeoutMS=3000)  # 3秒连接超时
+    client = MongoClient(atlas_mongo_uri, serverSelectionTimeoutMS=3000, tlsCAFile=certifi.where())  # 3秒连接超时
     db = client[atlas_mongo_db]
     collection = db.books
     logging.info(f"Connected to MongoDB database: {atlas_mongo_db}")
+    print(client.list_database_names())
 except Exception as e:
     logging.error(f"Error connecting to MongoDB: {e}")
     raise
