@@ -23,6 +23,16 @@ resource "aws_vpc_endpoint" "ecr_dkr" {
   private_dns_enabled = true
 }
 
+resource "aws_vpc_endpoint" "cloudwatch_logs" {
+  vpc_id              = data.aws_vpc.main.id
+  service_name        = "com.amazonaws.ap-southeast-2.logs"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = [aws_subnet.private.id]
+  security_group_ids  = [aws_security_group.vpc_endpoints.id]
+
+  private_dns_enabled = true
+}
+
 # 为 VPC Endpoint 创建一个安全组（允许 443）
 resource "aws_security_group" "vpc_endpoints" {
   name        = "vpc-endpoint-sg"
@@ -42,6 +52,15 @@ resource "aws_security_group" "vpc_endpoints" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
+}
+
+resource "aws_vpc_endpoint" "sts" {
+  vpc_id            = data.aws_vpc.main.id
+  service_name      = "com.amazonaws.ap-southeast-2.sts"
+  vpc_endpoint_type = "Interface"
+  subnet_ids        = [aws_subnet.private.id]
+  security_group_ids = [aws_security_group.vpc_endpoints.id]
+  private_dns_enabled = true
 }
 
 #---------------------------------------------------
