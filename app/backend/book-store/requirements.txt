@@ -9,3 +9,4 @@ python-dotenv==1.0.1
 python-jose==3.3.0
 wraps==0.15.0
 flasgger==0.9.7.1
+certifi>=2024.0.0

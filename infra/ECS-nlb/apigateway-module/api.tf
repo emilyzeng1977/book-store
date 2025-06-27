@@ -1,4 +1,3 @@
-resource "aws_apigatewayv2_api" "http_api" {
-  name          = "${var.project_name}-api"
-  protocol_type = "HTTP"
+data "aws_apigatewayv2_api" "http_api" {
+  api_id = "58od7vo74d"
 }
