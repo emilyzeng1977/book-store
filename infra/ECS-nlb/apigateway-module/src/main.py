@@ -38,34 +38,23 @@ def get_public_key(token):
         raise Exception("Public key not found in JWKs")
 
     try:
-        # return jwk.construct(key_data)
         key_obj = jwk.construct(key_data)
         return key_obj.to_pem().decode('utf-8')  # ✅ 返回 PEM 格式的 key
     except Exception as e:
         raise Exception(f"Failed to construct public key from JWK: {e}")
 
-def verify_token(token):
-    try:
-        public_key = get_public_key(token)
-        decoded = jwt.decode(
-            token,
-            key=public_key,
-            algorithms=["RS256"],
-            issuer=cognito_issuer
-        )
-        return decoded
-    except ExpiredSignatureError:
-        raise Exception("Token has expired")
-    except JWTClaimsError as e:
-        raise Exception(f"Invalid claims: {e}")
-    except JWTError as e:
-        raise Exception(f"JWT decode error: {e}")
-    except Exception as e:
-        raise Exception(f"Token verification failed: {e}")
-
-
 def lambda_handler(event, context):
     logger.info("Auth event: %s", json.dumps(event))
+
+    # ✅ 1. 放行 OPTIONS 请求（CORS 预检）
+    if event.get("requestContext", {}).get("http", {}).get("method") == "OPTIONS":
+        return {
+            "isAuthorized": True,
+            "context": {
+                "skipAuth": "true"
+            }
+        }
+
     try:
         token = event["headers"].get("authorization") or event["headers"].get("Authorization", "")
         token = token.replace("Bearer ", "")

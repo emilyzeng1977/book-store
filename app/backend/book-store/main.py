@@ -53,11 +53,15 @@ cognito_user_pool_id = get_env_variable('COGNITO_USER_POOL_ID', 'ap-southeast-2_
 cognito_client_id = get_env_variable('COGNITO_CLIENT_ID', '1ktmj89m2g93t3pbb2u24mbl6s')
 cognito_client_secret = get_env_variable('COGNITO_CLIENT_SECRET', 'v3anmuq5t83p1b8i32m3r54hcjctjjgtl9de46fgkf54a5iqi2r')
 
-cors_origins_str = get_env_variable('CORS_ORIGINS', 'http://localhost:3000')
-cookie_domain = get_env_variable('COOKIE_DOMAIN', 'localhost')
+cookie_httponly = get_env_variable('COOKIE_HTTPONLY', 'True')
+cookie_secure = get_env_variable('COOKIE_SECURE', 'True')
+cookie_samesite = get_env_variable('COOKIE_SAMESITE', 'None')
+cookie_domain = get_env_variable('COOKIE_DOMAIN', '.be-devops.shop')
+cookie_max_age = get_env_variable('COOKIE_MAX_AGE', 3600)
 
 auth_enable = get_env_variable('AUTH_ENABLE', 'false').lower() == 'true'
 
+cors_origins_str = get_env_variable('CORS_ORIGINS', 'https://dev.be-devops.shop')
 cors_origins = [origin.strip() for origin in cors_origins_str.split(',') if origin.strip()]
 CORS(app,
      supports_credentials=True,
@@ -141,8 +145,15 @@ def verify_token(token):
 def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
+        # 关闭认证或是预检请求，直接放行
+        func_name = f.__name__
+
         if not auth_enable:
-            # 如果关闭认证开关，直接执行目标函数
+            logging.debug(f"[token_required] Skipped (auth disabled) - Function: {func_name}")
+            return f(*args, **kwargs)
+
+        if request.method == 'OPTIONS':
+            logging.debug(f"[token_required] Skipped (OPTIONS request) - Function: {func_name}")
             return f(*args, **kwargs)
         token = None
 
@@ -256,15 +267,15 @@ def login():
         response = make_response(jsonify(auth_result))
 
         # 设置cookie
-        # response.set_cookie(
-        #     'Authorization',
-        #     f'Bearer {access_token}',
-        #     httponly=True,  # JS 不能读取，防止XSS
-        #     secure=False,  # 本地测试用 False, 生产环境请改成 True (只会在 HTTPS 请求中被浏览器接收或发送) ,当samesite为None时必须为True
-        #     samesite='Lax',  # Lax|CSRF防护，可根据需求改为 'Strict', 注意，为None时候必须要HTTPS
-        #     # domain=cookie_domain,
-        #     max_age=3600  # token有效期，比如1小时
-        # )
+        response.set_cookie(
+            'Authorization',
+            f'Bearer {access_token}',
+            httponly=cookie_httponly, # True: JS 不能读取，防止XSS
+            secure=cookie_secure,     # 本地测试用 False, 生产环境请改成 True (只会在 HTTPS 请求中被浏览器接收或发送) ,当samesite为None时必须为True
+            samesite=cookie_samesite, # Lax|CSRF防护，可根据需求改为 'Strict', 注意，为None时候必须要HTTPS
+            domain=cookie_domain,     # 关键点！支持跨子域共享 cookie
+            max_age=cookie_max_age    # token有效期，比如1小时
+        )
         return response
 
         # return jsonify(resp['AuthenticationResult'])

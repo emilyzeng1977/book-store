@@ -45,7 +45,7 @@ resource "aws_apigatewayv2_authorizer" "lambda_auth" {
   name                       = "lambda-authorizer"
   api_id                     = data.aws_apigatewayv2_api.http_api.id
   authorizer_type            = "REQUEST"
-  authorizer_uri             = module.authorizer_lambda.lambda_function_invoke_arn
+  authorizer_uri             = "arn:aws:apigateway:${var.aws_region}:lambda:path/2015-03-31/functions/${module.authorizer_lambda.lambda_function_arn}/invocations"
   identity_sources           = ["$request.header.Authorization"]
   authorizer_payload_format_version = "2.0"
   enable_simple_responses    = true
