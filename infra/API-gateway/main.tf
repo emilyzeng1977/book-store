@@ -15,10 +15,10 @@ resource "aws_apigatewayv2_api" "http_api" {
   protocol_type = "HTTP"
 }
 
-# 3. 显式创建 $default 阶段
-resource "aws_apigatewayv2_stage" "default" {
+# 3. 显式创建dev阶段
+resource "aws_apigatewayv2_stage" "dev" {
   api_id      = aws_apigatewayv2_api.http_api.id
-  name        = "$default"
+  name        = "dev"
   auto_deploy = true
 }
 
@@ -37,5 +37,5 @@ resource "aws_apigatewayv2_domain_name" "custom_domain" {
 resource "aws_apigatewayv2_api_mapping" "mapping" {
   api_id      = aws_apigatewayv2_api.http_api.id
   domain_name = aws_apigatewayv2_domain_name.custom_domain.domain_name
-  stage       = aws_apigatewayv2_stage.default.name
+  stage       = aws_apigatewayv2_stage.dev.name
 }

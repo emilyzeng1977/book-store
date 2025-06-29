@@ -12,3 +12,9 @@ resource "aws_apigatewayv2_route" "auth_proxy_route" {
   route_key = "ANY /auth/{proxy+}"
   target    = "integrations/${aws_apigatewayv2_integration.vpc_link_integration.id}"
 }
+
+resource "aws_apigatewayv2_route" "options_route" {
+  api_id    = data.aws_apigatewayv2_api.http_api.id
+  route_key = "OPTIONS /{proxy+}"
+  target    = "integrations/${aws_apigatewayv2_integration.vpc_link_integration.id}"
+}
