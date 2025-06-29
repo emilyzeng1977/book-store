@@ -1,7 +1,7 @@
 // config.js
 
 // 环境变量，控制当前运行环境
-const ENV = 'development'; // 可选 'development' 或 'production'
+const ENV = 'production'; // 可选 'development' 或 'production'
 
 // 根据不同环境配置不同的 API 地址
 const CONFIG = {
