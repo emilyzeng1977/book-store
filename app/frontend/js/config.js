@@ -10,7 +10,7 @@ const CONFIG = {
     USE_LOCAL_STORAGE_FOR_TOKEN: true,  // 开发环境用 localStorage 存 token
   },
   production: {
-    API_BASE_URL: "https://dev.be-devops.shop",
+    API_BASE_URL: "https://dev-api.be-devops.shop",
     USE_LOCAL_STORAGE_FOR_TOKEN: false, // 生产环境用 Cookie 存 token
   }
 };
