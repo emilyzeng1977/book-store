@@ -56,9 +56,22 @@ def lambda_handler(event, context):
         }
 
     try:
+        # ✅ 1. 从 Header 中提取
         token = event["headers"].get("authorization") or event["headers"].get("Authorization", "")
-        token = token.replace("Bearer ", "")
+        logger.info(f"Token from headers: {token}")
 
+        # ✅ 2. 若未能从Header中获得, 则再试着从cookies数组中提取（如果是 HTTP API 会放这里）
+        if not token and "cookies" in event:
+            for cookie in event["cookies"]:
+                if cookie.startswith("Authorization=") or cookie.startswith("authorization="):
+                    token = cookie.split("=", 1)[1]
+                    logger.info(f"Token from event['cookies']: {token}")
+                    break
+
+        # ✅ 清洗 token，去掉 Bearer 前缀和引号
+        logger.info(token)
+        token = token.replace("Bearer ", "").strip('"')
+        logger.info(token)
         public_key = get_public_key(token)
         decoded = jwt.decode(
             token,

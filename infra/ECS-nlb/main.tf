@@ -17,6 +17,7 @@ module "apigw" {
   private_subnet_ids = [module.network.private_subnet_id]
   ecs_service_sg_id  = aws_security_group.vpc_link_sg.id
   nlb_listener_arn   = aws_lb_listener.nlb_listener.arn
+  use_cookie_auth    = true
 }
 
 module "ecs" {
