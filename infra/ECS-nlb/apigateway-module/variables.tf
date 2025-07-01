@@ -23,3 +23,9 @@ variable "nlb_listener_arn" {
   description = "ARN of the NLB listener"
   type        = string
 }
+
+variable "use_cookie_auth" {
+  description = "Whether to use Cookie for authorization instead of Authorization header"
+  type        = bool
+  default     = true
+}
