@@ -104,6 +104,12 @@ resource "aws_ecs_task_definition" "book_store" {
           protocol      = "tcp"
         }
       ]
+      environment = [
+        {
+          name  = "PRICE_SERVER"
+          value = "book_store_price.local"
+        }
+      ]
       logConfiguration = {
         logDriver = "awslogs"
         options = {

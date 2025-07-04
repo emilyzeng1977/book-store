@@ -89,6 +89,29 @@ resource "aws_ecs_task_definition" "book_store_price" {
 }
 
 # ---------------------------
+# 创建 Security Group
+# ---------------------------
+resource "aws_security_group" "sg_book_store_price" {
+  name = "${local.book_store_container_name}-ecs-sg"
+  description = "Allow book-store to book-store-price"
+  vpc_id = var.bookStore_vpi_id
+
+  ingress {
+    from_port   = 5000
+    to_port     = 5000
+    protocol    = "tcp"
+    security_groups = var.bookStore_service_sg_ids
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+# ---------------------------
 # 创建 ECS Service，用于部署并运行 Fargate 容器任务
 # ---------------------------
 resource "aws_ecs_service" "book_store_price" {
@@ -102,6 +125,9 @@ resource "aws_ecs_service" "book_store_price" {
     subnets          = var.bookStore_service_subnet_ids
     assign_public_ip = false
     # 此处也用了和book_store一样的SG, 因为book-store-price也是监听5000端口
-    security_groups  = var.bookStore_service_sg_ids
+    security_groups  = [aws_security_group.sg_book_store_price.id]
+  }
+  service_registries {
+    registry_arn = aws_service_discovery_service.book_store_price.arn
   }
 }
