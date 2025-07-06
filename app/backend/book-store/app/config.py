@@ -28,7 +28,7 @@ COOKIE_MAX_AGE = int(get_env_variable('COOKIE_MAX_AGE', '3600'))
 AUTH_ENABLE = get_env_variable('AUTH_ENABLE', 'false').lower() == 'true'
 
 # CORS 允许来源
-CORS_ORIGINS_LIST = get_env_variable('CORS_ORIGINS_LIST', 'https://dev.be-devops.shop')
+CORS_ORIGINS = get_env_variable('CORS_ORIGINS', 'https://dev.be-devops.shop')
 
 PRICE_SERVER = get_env_variable('PRICE_SERVER', 'host.docker.internal')
 PRICE_PORT = get_env_variable('PRICE_PORT', '5000')
