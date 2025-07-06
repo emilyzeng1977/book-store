@@ -12,7 +12,7 @@ from jose.exceptions import JWTError, ExpiredSignatureError, JWTClaimsError
 
 from functools import wraps
 
-from config import (
+from .config import (
     AWS_REGION,
     COGNITO_USER_POOL_ID,
     COGNITO_CLIENT_ID,
