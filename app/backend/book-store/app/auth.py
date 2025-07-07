@@ -1,7 +1,7 @@
 import logging
 
 import requests
-from flask import jsonify, request
+from flask import jsonify, request, g
 
 import hmac
 import hashlib
@@ -11,6 +11,8 @@ from jose import jwk, jwt
 from jose.exceptions import JWTError, ExpiredSignatureError, JWTClaimsError
 
 from functools import wraps
+
+from . import app  # 从 app 中获取 db
 
 from .config import (
     AWS_REGION,
@@ -74,44 +76,59 @@ def verify_token(token):
     except Exception as e:
         raise Exception(f"Token verification failed: {e}")
 
-
-def token_required(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        # 关闭认证或是预检请求，直接放行
-        func_name = f.__name__
-
-        if not AUTH_ENABLE:
-            logging.debug(f"[token_required] Skipped (auth disabled) - Function: {func_name}")
-            return f(*args, **kwargs)
-
-        if request.method == 'OPTIONS':
-            logging.debug(f"[token_required] Skipped (OPTIONS request) - Function: {func_name}")
-            return f(*args, **kwargs)
-        token = None
-
-        # 先检查 Authorization header
-        auth_header = request.headers.get('Authorization')
-        if auth_header and auth_header.startswith('Bearer '):
-            token = auth_header.split(' ')[1]
-
-        # 如果 header 没有 token，再检查 Cookie 里的 Authorization
-        if not token:
-            cookie_auth = request.cookies.get('Authorization')
-            if cookie_auth and cookie_auth.startswith('Bearer '):
-                token = cookie_auth.split(' ')[1]
+def token_required(role=None):
+    def decorator(f):
+        @wraps(f)
+        def decorated(*args, **kwargs):
+            logging.info("token_required: start token validation")
+            token = None
+            auth_header = request.headers.get('Authorization')
+            if auth_header and auth_header.startswith('Bearer '):
+                token = auth_header.split(' ')[1]
+                logging.info("token_required: token found in Authorization header")
             else:
-                # 如果 cookie 里的 Authorization 不是 Bearer 开头，直接用整个值作为 token
-                token = cookie_auth
+                logging.info("token_required: no token in Authorization header")
 
-        if not token:
-            return jsonify({'error': 'Missing token'}), 401
+            # Header 里没token时，尝试从 Cookie 拿
+            if not token:
+                cookie_auth = request.cookies.get('Authorization')
+                if cookie_auth and cookie_auth.startswith('Bearer '):
+                    token = cookie_auth.split(' ')[1]
+                    logging.info("token_required: token found in Cookie with Bearer prefix")
+                else:
+                    # 可能 Cookie 就是纯 token，不带 Bearer
+                    token = cookie_auth
+                    if token:
+                        logging.info("token_required: token found in Cookie without Bearer prefix")
+                    else:
+                        logging.info("token_required: no token found in Cookie")
 
-        try:
-            verify_token(token)
-        except Exception as e:
-            return jsonify({'error': 'Invalid token', 'details': str(e)}), 401
 
-        return f(*args, **kwargs)
+            if not token:
+                return jsonify({'error': 'Missing token'}), 401
 
-    return decorated
+            try:
+                decoded = verify_token(token)
+                cognito_sub = decoded.get("sub")
+                logging.info(f"token_required: token verified, sub={cognito_sub}")
+
+                user = app.db.users.find_one({"cognito_sub": cognito_sub})
+                if not user:
+                    return jsonify({'error': 'User not found'}), 403
+
+                g.user = user  # 缓存用户信息
+
+                user_role = user.get('role')
+
+                if role:
+                    allowed_roles = [role] if isinstance(role, str) else role
+                    if user_role not in allowed_roles:
+                        return jsonify({'error': 'Insufficient permissions'}), 403
+
+                return f(*args, **kwargs)
+
+            except Exception as e:
+                return jsonify({'error': 'Invalid token', 'details': str(e)}), 401
+
+        return decorated
+    return decorator

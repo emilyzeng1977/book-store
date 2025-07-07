@@ -25,7 +25,7 @@ COOKIE_DOMAIN = get_env_variable('COOKIE_DOMAIN', '.be-devops.shop')
 COOKIE_MAX_AGE = int(get_env_variable('COOKIE_MAX_AGE', '3600'))
 
 # 认证是否启用
-AUTH_ENABLE = get_env_variable('AUTH_ENABLE', 'false').lower() == 'true'
+AUTH_ENABLE = get_env_variable('AUTH_ENABLE', 'true').lower() == 'true'
 
 # CORS 允许来源
 CORS_ORIGINS = get_env_variable('CORS_ORIGINS', 'https://dev.be-devops.shop')
