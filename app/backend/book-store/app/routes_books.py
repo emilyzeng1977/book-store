@@ -34,7 +34,7 @@ def get_book(book_id):
         return jsonify({'error': 'Invalid book ID'}), 400
 
 @app.route('/books', methods=['POST'])
-@token_required(role=None)
+@token_required(role=['admin'])
 @swag_from(books_post_doc)
 def add_book():
     data = request.json
@@ -48,7 +48,7 @@ def add_book():
         return jsonify({'error': 'Insert failed'}), 500
 
 @app.route('/books/<string:book_id>', methods=['PUT'])
-@token_required(role=None)
+@token_required(role=['admin'])
 def update_book(book_id):
     data = request.json or {}
     update_data = {k: v for k, v in data.items() if k in ['title', 'author'] and isinstance(v, str)}
@@ -65,7 +65,7 @@ def update_book(book_id):
         return jsonify({'error': str(e)}), 500
 
 @app.route('/books/<string:book_id>', methods=['DELETE'])
-@token_required(role=None)
+@token_required(role=['admin'])
 @swag_from(books_delete_doc)
 def delete_book(book_id):
     try:
