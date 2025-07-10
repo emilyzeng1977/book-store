@@ -19,6 +19,20 @@ from .config import (
 
 # 创建 Flask app 实例
 app = Flask(__name__)
+
+# 配置 Swagger UI 安全定义
+app.config['SWAGGER'] = {
+    'title': 'Bookstore API',
+    'uiversion': 3,
+    'securityDefinitions': {
+        'BearerAuth': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header'
+        }
+    }
+}
+
 swagger = Swagger(app)
 
 # 日志配置
@@ -61,3 +75,4 @@ from .routes_auth import *
 from .routes_books import *
 from .routes_misc import *
 from .routes_users import *
+from .routes_orders import *
