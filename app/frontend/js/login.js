@@ -30,6 +30,7 @@ loginForm.addEventListener('submit', async function (e) {
     window.location.href = 'index.html';
     console.log('登录成功', data);
   } else {
-    alert('登录失败，请检查用户名或密码');
+    const err = await res.json();
+    alert(err.message || err.error || '登录失败，请检查用户名或密码');
   }
 });
