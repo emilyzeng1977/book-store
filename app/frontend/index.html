@@ -8,13 +8,33 @@
   <link rel="icon" href="/favicon.ico" type="image/x-icon" />
 </head>
 <body>
-  <div id="main-page">
-    <h1>图书管理系统</h1>
-    <ul class="book-list" id="book-list"></ul>
-    <div>
-      <button class="btn" id="add-book-btn">添加书籍</button>
-    </div>
+<!-- 当前用户信息 -->
+<div id="current-user-wrapper">
+  <div id="current-user" class="user-info">
+    当前用户：<span id="current-username">加载中...</span>（<span id="current-role">加载中...</span>）
+  </div>
+  <button id="logout-btn" class="btn logout-btn">退出登录</button>
+</div>
 
+  <div id="book-section">
+    <!-- 图书列表标题 -->
+    <h2 class="section-title">图书列表</h2>
+
+    <!-- 图书列表容器 -->
+    <table id="book-table" class="book-table">
+      <thead>
+        <tr>
+          <th>书名</th>
+          <th>作者</th>
+          <th>简介</th>
+          <th>操作</th>
+          <th>状态</th>
+        </tr>
+      </thead>
+      <tbody id="book-list">
+        <!-- JavaScript 会动态插入行 -->
+      </tbody>
+    </table>
     <!-- 添加/编辑书籍模态框 -->
     <div id="addEditBookModal" class="modal">
       <div class="modal-content">
@@ -22,14 +42,42 @@
         <h2 id="modal-title">添加书籍</h2>
         <form id="book-form">
           <input type="hidden" id="book-id" />
+
           <label for="title">书名：</label>
           <input type="text" id="title" required /><br /><br />
+
           <label for="author">作者：</label>
           <input type="text" id="author" required /><br /><br />
+
+          <label for="description">简介：</label>
+          <textarea id="description" rows="3" style="width: 100%;"></textarea><br /><br />
+
           <button type="submit" class="btn">保存</button>
         </form>
       </div>
     </div>
+
+    <!-- 添加书籍按钮 -->
+    <div>
+      <button class="btn" id="add-book-btn">添加书籍</button>
+    </div>
+  </div>
+
+  <!-- 用户管理区域（初始隐藏） -->
+  <div id="user-section" style="display: none;">
+    <h2 class="section-title">用户列表</h2>
+    <table id="user-table" class="book-table">
+      <thead>
+        <tr>
+          <th>用户名</th>
+          <th>角色</th>
+          <th>创建时间</th>
+        </tr>
+      </thead>
+      <tbody id="user-list">
+        <!-- JavaScript 会动态插入内容 -->
+      </tbody>
+    </table>
   </div>
 
   <script type="module" src="js/scripts.js"></script>

@@ -4,7 +4,7 @@ from flasgger import swag_from
 from . import app
 from .auth import get_secret_hash
 from .config import *
-from .swagger_defs import auth_login_doc
+from .swagger_auth_defs import *
 
 cognito_client = app.cognito_client
 

@@ -1,57 +1,3 @@
-auth_login_doc = {
-    'tags': ['Auth'],
-    'summary': '用户登录',
-    'description': '使用 Cognito 进行用户认证，成功后返回认证结果（包含 AccessToken）',
-    'consumes': ['application/json'],
-    'parameters': [
-        {
-            'name': 'body',
-            'in': 'body',
-            'required': True,
-            'schema': {
-                'type': 'object',
-                'required': ['username', 'password'],
-                'properties': {
-                    'username': {'type': 'string', 'example': 'testuser'},
-                    'password': {'type': 'string', 'example': 'TestPassword123'}
-                }
-            }
-        }
-    ],
-    'responses': {
-        200: {
-            'description': '登录成功，返回认证信息',
-            'schema': {
-                'type': 'object',
-                'properties': {
-                    'AccessToken': {'type': 'string'},
-                    'IdToken': {'type': 'string'},
-                    'RefreshToken': {'type': 'string'},
-                    'ExpiresIn': {'type': 'integer'}
-                }
-            }
-        },
-        400: {
-            'description': '缺少用户名或密码',
-            'schema': {
-                'type': 'object',
-                'properties': {
-                    'error': {'type': 'string', 'example': 'username and password required'}
-                }
-            }
-        },
-        401: {
-            'description': '认证失败',
-            'schema': {
-                'type': 'object',
-                'properties': {
-                    'error': {'type': 'string', 'example': 'NotAuthorizedException'},
-                    'message': {'type': 'string', 'example': 'Incorrect username or password.'}
-                }
-            }
-        }
-    }
-}
 # books
 books_get_doc = {
     'tags': ['Books'],
@@ -67,7 +13,7 @@ books_get_doc = {
                         'items': {
                             'type': 'object',
                             'properties': {
-                                '_id': {
+                                'book_id': {
                                     'type': 'string',
                                     'example': '60f7b0b6e13a4b3e2f4a6789'
                                 },
@@ -78,6 +24,10 @@ books_get_doc = {
                                 'author': {
                                     'type': 'string',
                                     'example': 'Author Name'
+                                },
+                                'description': {
+                                    'type': 'string',
+                                    'example': 'This is a book about...'
                                 }
                             }
                         }
@@ -130,9 +80,10 @@ books_id_get_doc = {
             'schema': {
                 'type': 'object',
                 'properties': {
-                    '_id': {'type': 'string', 'example': '60f7b0b6e13a4b3e2f4a6789'},
+                    'book_id': {'type': 'string', 'example': '60f7b0b6e13a4b3e2f4a6789'},
                     'title': {'type': 'string', 'example': 'Book Title'},
-                    'author': {'type': 'string', 'example': 'Author Name'}
+                    'author': {'type': 'string', 'example': 'Author Name'},
+                    'description': {'type': 'string', 'example': 'This is a book about...'}
                 }
             }
         },
@@ -162,7 +113,8 @@ books_post_doc = {
                 'required': ['title', 'author'],
                 'properties': {
                     'title': {'type': 'string', 'example': 'Book Title'},
-                    'author': {'type': 'string', 'example': 'Author Name'}
+                    'author': {'type': 'string', 'example': 'Author Name'},
+                    'description': {'type': 'string', 'example': 'This is a book about...'}
                 }
             }
         }
@@ -173,9 +125,10 @@ books_post_doc = {
             'schema': {
                 'type': 'object',
                 'properties': {
-                    '_id': {'type': 'string', 'example': '60f7b0b6e13a4b3e2f4a6789'},
+                    'book_id': {'type': 'string', 'example': '60f7b0b6e13a4b3e2f4a6789'},
                     'title': {'type': 'string', 'example': 'Book Title'},
-                    'author': {'type': 'string', 'example': 'Author Name'}
+                    'author': {'type': 'string', 'example': 'Author Name'},
+                    'description': {'type': 'string', 'example': 'This is a book about...'}
                 }
             }
         },
@@ -250,62 +203,4 @@ books_delete_doc = {
             }
         }
     }
-}
-# User
-users_list_doc = {
-    'tags': ['Users'],
-    'summary': 'List all users',
-    'responses': {
-        200: {
-            'description': 'A list of users',
-            'schema': {
-                'type': 'array',
-                'items': {
-                    'type': 'object',
-                    'properties': {
-                        'username': {'type': 'string'},
-                        'role': {'type': 'string'},
-                        'created_at': {'type': 'string', 'format': 'date-time'}
-                    }
-                }
-            }
-        }
-    },
-    'security': [{'BearerAuth': []}]
-}
-
-users_current_doc = {
-    "tags": ["Users"],
-    "summary": "Get current authenticated user",
-    "description": "Returns information about the currently authenticated user.",
-    "responses": {
-        200: {
-            "description": "Current user information",
-            "examples": {
-                "application/json": {
-                    "username": "johndoe",
-                    "role": "admin",
-                    "created_at": "2024-07-01T12:34:56.000Z"
-                }
-            }
-        },
-        403: {
-            "description": "User not found or unauthorized",
-            "examples": {
-                "application/json": {
-                    "error": "User not found"
-                }
-            }
-        },
-        500: {
-            "description": "Server error",
-            "examples": {
-                "application/json": {
-                    "error": "Failed to retrieve current user",
-                    "details": "Some internal error message"
-                }
-            }
-        }
-    },
-    "security": [{"BearerAuth": []}]
 }

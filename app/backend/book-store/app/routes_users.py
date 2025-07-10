@@ -3,7 +3,7 @@ from flasgger import swag_from
 
 from . import app
 from .auth import token_required
-from .swagger_defs import *
+from .swagger_users_defs import *
 
 # 从 app 获取 MongoDB 的 users 集合
 users_collection = app.db.users
