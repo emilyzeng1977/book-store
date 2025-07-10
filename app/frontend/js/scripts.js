@@ -46,34 +46,38 @@ async function displayBooks() {
   const data = await res.json();
   bookList.innerHTML = ''; // 清空 tbody 内容
 
-  // 获取当前用户角色
-  const isUser = currentUserRole === 'user'; // 假设 currentUserRole 已经被设置
+  const isUser = currentUserRole === 'user';
 
-    data.books.forEach(book => {
-        const tr = document.createElement('tr');
+  data.books.forEach(book => {
+    const tr = document.createElement('tr');
 
-        // 根据状态返回带样式的 HTML 字段
-        const isAvailable = book.status === 'available';
-        const statusLabel = isAvailable
-        ? `<span class="status available">可借阅</span>`
-        : `<span class="status borrowed">已借出</span>`;
+    const isAvailable = book.status === 'available';
+    const statusLabel = isAvailable
+      ? `<span class="status available">未购买</span>`
+      : `<span class="status borrowed">已购买</span>`;
 
-        // 如果是 admin，不显示状态内容
-        const statusCellContent = isUser ? statusLabel : '';
+    const statusCellContent = isUser ? statusLabel : '';
 
-        tr.innerHTML = `
-          <td>${book.title}</td>
-          <td>${book.author}</td>
-          <td>${book.description}</td>
-          <td>
-            <button class="btn edit-btn" data-id="${book._id}" ${isUser ? 'disabled' : ''}>编辑</button>
-          </td>
-          <td>
-            ${statusCellContent}
-          </td>
-        `;
-        bookList.appendChild(tr);
-    });
+    tr.innerHTML = `
+      <td>${book.book_id}</td>
+      <td>${book.title}</td>
+      <td>${book.author}</td>
+      <td>${book.description}</td>
+      <td>
+          ${
+            isUser
+              ? `<button class="btn purchase-btn" data-id="${book.book_id}" data-purchased="${book.purchased}">
+                   ${book.purchased ? '取消购买' : '购买'}
+                 </button>`
+              : `<button class="btn edit-btn" data-id="${book.book_id}">编辑</button>`
+          }
+      </td>
+      <td>
+        ${statusCellContent}
+      </td>
+    `;
+    bookList.appendChild(tr);
+  });
 }
 
 // 打开添加书籍弹窗
@@ -95,13 +99,14 @@ async function openEditBookModal(id) {
 
   const book = await res.json();
   document.getElementById('modal-title').textContent = '编辑书籍';
-  document.getElementById('book-id').value = book._id;
+  document.getElementById('book-id').value = book.book_id; // ✅ 使用 book_id
   document.getElementById('title').value = book.title;
-  document.getElementById('title').readOnly = true; // ✅ 设置为不可编辑
+  document.getElementById('title').readOnly = true; // 不允许修改 title
   document.getElementById('author').value = book.author;
-  document.getElementById('description').value = book.description;
+  document.getElementById('description').value = book.description || '';
   modal.style.display = 'block';
 }
+
 
 // 关闭弹窗
 function closeAddEditBookModal() {
