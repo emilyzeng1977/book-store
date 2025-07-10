@@ -6,13 +6,9 @@ import logging
 from . import app
 from .auth import token_required
 from .swagger_books_defs import *
+from .utils import serialize_book
 
 collection = app.collection
-
-def serialize_book(book):
-    if '_id' in book:
-        book['_id'] = str(book['_id'])
-    return book
 
 @app.route('/books', methods=['GET'])
 @token_required(role=None)
