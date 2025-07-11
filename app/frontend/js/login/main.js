@@ -1,4 +1,4 @@
-import { API_BASE_URL, USE_LOCAL_STORAGE_FOR_TOKEN } from './config.js';
+import { API_BASE_URL, USE_LOCAL_STORAGE_FOR_TOKEN } from '../config.js';
 
 const loginForm = document.getElementById('login-form');
 
