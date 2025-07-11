@@ -5,13 +5,6 @@ import logging
 from . import app
 from .config import PRICE_SERVER, PRICE_PORT
 
-@app.route('/greet', methods=['GET'])
-def greet():
-    name = request.args.get('name', 'World')
-    hostname = socket.gethostname()
-    ip = socket.gethostbyname(hostname)
-    return jsonify({'message': f"Hello, {name}! Server IP: {ip}"})
-
 @app.route('/call-price', methods=['GET'])
 def call_price():
     book_id = request.args.get('book_id')
@@ -29,6 +22,7 @@ def call_price():
         logging.error(f"Price service error: {e}")
         return jsonify({'error': str(e)}), 500
 
-@app.route('/', methods=['GET'])
+@app.route('/healthz', methods=['GET'])
 def health_check():
-    return jsonify({"message": "Hello, bookStore!"}), 200
+    return jsonify({"status": "ok", "message": "Hello, bookStore!"}), 200
+
