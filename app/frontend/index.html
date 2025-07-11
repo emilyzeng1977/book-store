@@ -8,13 +8,30 @@
   <link rel="icon" href="/favicon.ico" type="image/x-icon" />
 </head>
 <body>
-<!-- 当前用户信息 -->
-<div id="current-user-wrapper">
-  <div id="current-user" class="user-info">
-    当前用户：<span id="current-username">加载中...</span>（<span id="current-role">加载中...</span>）
+  <!-- 当前用户信息 -->
+  <div id="current-user-wrapper">
+    <div id="current-user" class="user-info">
+      当前用户：<span id="current-username">加载中...</span>（<span id="current-role">加载中...</span>）
+    </div>
+    <button id="logout-btn" class="btn logout-btn">退出登录</button>
   </div>
-  <button id="logout-btn" class="btn logout-btn">退出登录</button>
-</div>
+
+  <!-- 价格查询区域 -->
+  <div id="price-query-wrapper" class="section">
+    <h2 class="section-title">查询图书价格</h2>
+
+    <div class="form-group">
+      <label for="price-book-id">选择书籍编号：</label>
+      <select id="price-book-id" class="select-input">
+        <!-- JavaScript 动态插入选项 -->
+      </select>
+      <button id="check-price-btn" class="btn">查询价格</button>
+    </div>
+
+    <div id="price-result" class="price-result">
+      <!-- 查询结果将显示在这里 -->
+    </div>
+  </div>
 
   <div id="book-section">
     <!-- 图书列表标题 -->

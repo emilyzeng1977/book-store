@@ -1,3 +1,4 @@
+import requests
 from flask import request, jsonify
 from flasgger import swag_from
 from pymongo import errors
@@ -7,6 +8,11 @@ from . import app
 from .auth import token_required
 from .swagger_books_defs import *
 from .utils import serialize_book
+
+from .config import (
+    PRICE_SERVER,
+    PRICE_PORT
+)
 
 collection = app.collection
 
@@ -103,3 +109,54 @@ def delete_book(book_id):
         return jsonify({'message': 'Book deleted'})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@app.route('/books/<string:book_id>/price', methods=['GET'])
+@token_required(role=None)
+def get_book_price(book_id):
+    price_url = f"http://{PRICE_SERVER}:{PRICE_PORT}/price/{book_id}"
+
+    try:
+        response = requests.get(price_url, timeout=2)
+        response.raise_for_status()
+        price_data = response.json()
+
+        traceparent = price_data.get("traceparent")
+        changed_trace_id = price_data.get("changed_trace_id")
+        x_b3_trace_id = price_data.get("x_b3_trace_id")
+
+        return jsonify({
+            "book_id": book_id,
+            "price": price_data.get("price"),
+            "traceparent": traceparent,
+            "changed_trace_id": changed_trace_id,
+            "x_b3_trace_id": x_b3_trace_id,
+            "source": "book-store-price-service"
+        }), 200
+
+    except requests.exceptions.RequestException as e:
+        logging.error(f"[Price Service] Error getting price for {book_id}: {e}")
+
+        traceparent = None
+        changed_trace_id = None
+        x_b3_trace_id = None
+        error_details = str(e)
+
+        if e.response is not None:
+            try:
+                error_json = e.response.json()
+                traceparent = error_json.get("traceparent")
+                changed_trace_id = error_json.get("changed_trace_id")
+                x_b3_trace_id = error_json.get("x_b3_trace_id")
+                error_details = error_json.get("error", error_details)
+            except Exception:
+                pass
+
+        return jsonify({
+            "error": "Failed to get price from price-service",
+            "details": error_details,
+            "book_id": book_id,
+            "traceparent": traceparent,
+            "changed_trace_id": changed_trace_id,
+            "x_b3_trace_id": x_b3_trace_id,
+            "source": "book-store"
+        }), 500

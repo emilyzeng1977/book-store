@@ -1,5 +1,5 @@
 import { checkUserRole, setCurrentRole, displayUsers, logout } from './users.js';
-import { displayBooks, bindBookListEvents } from './books.js';
+import { displayBooks, bindBookListEvents, setupPriceQueryUI } from './books.js';
 import { bindUIEvents, openEditBookModal } from './modal.js';
 import { displayAllOrders } from './orders.js';
 
@@ -26,6 +26,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     } else {
       document.getElementById('add-book-btn').disabled = true;
     }
+    setupPriceQueryUI();
 
     // 显示书籍列表
     await displayBooks();
