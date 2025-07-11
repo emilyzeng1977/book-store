@@ -81,6 +81,23 @@
     </table>
   </div>
 
-  <script type="module" src="js/scripts.js"></script>
+  <!-- 订单列表区域（仅管理员可见） -->
+  <div id="order-section" style="display: none;">
+    <h2 class="section-title">订单列表</h2>
+    <table id="order-table" class="book-table">
+      <thead>
+        <tr>
+          <th>用户名</th>
+          <th>书籍编号</th>
+          <th>购买时间</th>
+        </tr>
+      </thead>
+      <tbody id="order-list">
+        <!-- JavaScript 会动态插入内容 -->
+      </tbody>
+    </table>
+  </div>
+
+  <script type="module" src="js/default/main.js"></script>
 </body>
 </html>

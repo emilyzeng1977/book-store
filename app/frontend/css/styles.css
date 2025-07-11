@@ -164,3 +164,21 @@ body {
   text-decoration: none;
   cursor: pointer;
 }
+
+.status {
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.9em;
+  color: #fff;
+  display: inline-block;
+}
+
+/* 未购买 - 绿色 */
+.status.available {
+  background-color: #4CAF50;
+}
+
+/* 已购买 - 灰蓝色 */
+.status.borrowed {
+  background-color: #607D8B;
+}
