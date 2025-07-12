@@ -14,7 +14,7 @@ resource "aws_cloudwatch_log_group" "book_store_price" {
 # ECS 任务执行角色（IAM Role）拉镜像、写日志
 # ---------------------------
 resource "aws_iam_role" "book_store_price_execution_role" {
-  name = "${local.book_store_price_container_name}_execution_role"  # 角色名称
+  name = "${local.book_store_price_container_name}_execution_role"
 
   # 定义允许哪些服务可以假设此角色，这里是ecs-tasks服务
   assume_role_policy = jsonencode({
@@ -22,7 +22,7 @@ resource "aws_iam_role" "book_store_price_execution_role" {
     Statement = [{
       Effect = "Allow",
       Principal = {
-        Service = "ecs-tasks.amazonaws.com"  # ECS任务服务
+        Service = "ecs-tasks.amazonaws.com"
       },
       Action = "sts:AssumeRole"
     }]
@@ -36,7 +36,7 @@ resource "aws_iam_role_policy_attachment" "book_store_price_execution_policy_att
 }
 
 # ---------------------------
-# ECS 容器内部代码执行 AWS 操作（如 Cognito）
+# ECS 任务角色 + X-Ray 权限
 # ---------------------------
 resource "aws_iam_role" "book_store_price_task_role" {
   name = "${local.book_store_price_container_name}_task_role"
@@ -52,6 +52,29 @@ resource "aws_iam_role" "book_store_price_task_role" {
     }]
   })
 }
+
+resource "aws_iam_role_policy" "book_store_price_xray_policy" {
+  name = "${local.book_store_price_container_name}-xray-policy"
+  role = aws_iam_role.book_store_price_task_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "xray:PutTraceSegments",
+          "xray:PutTelemetryRecords",
+          "xray:GetSamplingRules",
+          "xray:GetSamplingTargets",
+          "xray:GetSamplingStatisticSummaries"
+        ],
+        Resource = "*"
+      }
+    ]
+  })
+}
+
 # ---------------------------
 # 定义 ECS Fargate 的任务定义，包括容器配置、日志设置、CPU/内存等
 # ---------------------------
@@ -61,8 +84,8 @@ resource "aws_ecs_task_definition" "book_store_price" {
   network_mode             = "awsvpc"
   cpu                      = "256"
   memory                   = "512"
-  execution_role_arn = aws_iam_role.book_store_price_execution_role.arn  # 拉镜像、写日志
-  task_role_arn = aws_iam_role.book_store_price_task_role.arn
+  execution_role_arn       = aws_iam_role.book_store_price_execution_role.arn
+  task_role_arn            = aws_iam_role.book_store_price_task_role.arn
 
   depends_on = [aws_cloudwatch_log_group.book_store_price]
 
@@ -76,30 +99,63 @@ resource "aws_ecs_task_definition" "book_store_price" {
           protocol      = "tcp"
         }
       ]
+      essential = true
+      environment = [
+        {
+          name  = "AWS_XRAY_DAEMON_ADDRESS"
+          value = "127.0.0.1:2000"
+        }
+      ]
       logConfiguration = {
         logDriver = "awslogs"
         options = {
-          "awslogs-group" = aws_cloudwatch_log_group.book_store_price.name # CloudWatch Log Group 名称
-          "awslogs-region" = "ap-southeast-2"                              # 区域
-          "awslogs-stream-prefix" = "${local.book_store_price_container_name}"              # 日志流前缀，方便区分不同任务或容器
+          "awslogs-group"         = aws_cloudwatch_log_group.book_store_price.name
+          "awslogs-region"        = "ap-southeast-2"
+          "awslogs-stream-prefix" = "${local.book_store_price_container_name}"
         }
+      }
+    },
+    {
+      name      = "xray-daemon"
+      image     = "amazon/aws-xray-daemon"
+      essential = false
+      portMappings = [
+        {
+          containerPort = 2000
+          protocol      = "udp"
+        }
+      ]
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = aws_cloudwatch_log_group.book_store_price.name
+          "awslogs-region"        = "ap-southeast-2"
+          "awslogs-stream-prefix" = "xray"
+        }
+      }
+      healthCheck = {
+        command     = ["CMD-SHELL", "nc -z 127.0.0.1 2000 || exit 1"]
+        interval    = 30
+        timeout     = 5
+        retries     = 3
+        startPeriod = 10
       }
     }
   ])
 }
 
 # ---------------------------
-# 创建 Security Group
+# Security Group
 # ---------------------------
 resource "aws_security_group" "sg_book_store_price" {
-  name = "${local.book_store_container_name}-ecs-sg"
+  name        = "${local.book_store_price_container_name}-ecs-sg"
   description = "Allow book-store to book-store-price"
-  vpc_id = var.bookStore_vpi_id
+  vpc_id      = var.bookStore_vpi_id
 
   ingress {
-    from_port   = 5000
-    to_port     = 5000
-    protocol    = "tcp"
+    from_port       = 5000
+    to_port         = 5000
+    protocol        = "tcp"
     security_groups = var.bookStore_service_sg_ids
   }
 
@@ -124,9 +180,9 @@ resource "aws_ecs_service" "book_store_price" {
   network_configuration {
     subnets          = var.bookStore_service_subnet_ids
     assign_public_ip = false
-    # 此处也用了和book_store一样的SG, 因为book-store-price也是监听5000端口
     security_groups  = [aws_security_group.sg_book_store_price.id]
   }
+
   service_registries {
     registry_arn = aws_service_discovery_service.book_store_price.arn
   }

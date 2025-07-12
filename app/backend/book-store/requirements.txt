@@ -10,3 +10,4 @@ python-jose==3.3.0
 wraps==0.15.0
 flasgger==0.9.7.1
 certifi>=2024.0.0
+aws-xray-sdk==2.12.0
