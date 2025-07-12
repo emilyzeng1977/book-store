@@ -1,4 +1,4 @@
-resource "aws_service_discovery_private_dns_namespace" "book_store" {
+resource "aws_service_discovery_private_dns_namespace" "local" {
   name        = "local"
   vpc         = var.bookStore_vpi_id
   description = "Private DNS for ECS service discovery"
@@ -8,7 +8,7 @@ resource "aws_service_discovery_service" "book_store_price" {
   name = "book_store_price"
 
   dns_config {
-    namespace_id = aws_service_discovery_private_dns_namespace.book_store.id
+    namespace_id = aws_service_discovery_private_dns_namespace.local.id
     dns_records {
       type = "A"
       ttl  = 10
