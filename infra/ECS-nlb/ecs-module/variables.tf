@@ -3,6 +3,11 @@ variable "project_name" {
   type        = string
 }
 
+variable "bookStore_vpi_id" {
+  description = "VPC id"
+  type        = string
+}
+
 variable "bookStore_service_subnet_ids" {
   description = "List of private subnet IDs where book-store task run"
   type        = list(string)
