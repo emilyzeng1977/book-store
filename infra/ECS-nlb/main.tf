@@ -24,6 +24,7 @@ module "ecs" {
   source                       = "./ecs-module"
 
   project_name                 = var.project_name
+  bookStore_vpi_id             = module.network.vpc_id
   bookStore_service_subnet_ids = [module.network.private_subnet_id]
   bookStore_service_sg_ids     = [aws_security_group.ecs_fargate_sg.id]
   bookStore_lb_tg_arn          = aws_lb_target_group.ecs_tg.arn
