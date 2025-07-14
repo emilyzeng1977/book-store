@@ -7,7 +7,7 @@ import logging
 from . import app
 from .auth import token_required
 from .swagger_books_defs import *
-from .utils import serialize_book
+from .utils import serialize_book, safe_traced_get
 
 from .config import (
     PRICE_SERVER,
@@ -116,7 +116,8 @@ def get_book_price(book_id):
     price_url = f"http://{PRICE_SERVER}:{PRICE_PORT}/price/{book_id}"
 
     try:
-        response = requests.get(price_url, timeout=2)
+        # response = requests.get(price_url, timeout=2)
+        response = safe_traced_get(price_url, timeout=2, subsegment_name='call-price-service')
         response.raise_for_status()
         price_data = response.json()
 

@@ -80,6 +80,7 @@ resource "aws_iam_role_policy_attachment" "book_store_task_role_policy_attach" {
   policy_arn = aws_iam_policy.book_store_cognito_access_policy.arn
 }
 
+# --- X-Ray Access ---
 resource "aws_iam_role_policy" "book_store_xray_policy" {
   name = "${local.book_store_container_name}-xray-policy"
   role = aws_iam_role.book_store_task_role.id
@@ -91,11 +92,34 @@ resource "aws_iam_role_policy" "book_store_xray_policy" {
         Effect = "Allow",
         Action = [
           "xray:PutTraceSegments",
-          "xray:PutTelemetryRecords"
+          "xray:PutTelemetryRecords",
+          "xray:GetSamplingRules",
+          "xray:GetSamplingTargets",
+          "xray:GetSamplingStatisticSummaries"
         ],
         Resource = "*"
       }
     ]
+  })
+}
+
+# ✅ --- NEW: CloudWatch Logs Read for X-Ray Console Integration ---
+resource "aws_iam_role_policy" "book_store_logs_access_policy" {
+  name = "${local.book_store_container_name}-logs-access"
+  role = aws_iam_role.book_store_task_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [{
+      Effect = "Allow",
+      Action = [
+        "logs:GetLogEvents",
+        "logs:FilterLogEvents",
+        "logs:DescribeLogGroups",
+        "logs:DescribeLogStreams"
+      ],
+      Resource = "*"
+    }]
   })
 }
 
@@ -128,6 +152,10 @@ resource "aws_ecs_task_definition" "book_store" {
         {
           name  = "PRICE_SERVER"
           value = "book_store_price.local"
+        },
+        {
+          name  = "AWS_XRAY_DAEMON_ADDRESS"
+          value = "127.0.0.1:2000"
         }
       ]
       logConfiguration = {
@@ -146,7 +174,7 @@ resource "aws_ecs_task_definition" "book_store" {
       portMappings = [
         {
           containerPort = 2000
-          protocol      = "tcp"
+          protocol      = "udp"
         }
       ]
       logConfiguration = {

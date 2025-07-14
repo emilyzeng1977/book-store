@@ -30,6 +30,7 @@ export async function checkUserRole(onSuccess) {
     return user;
   } catch (err) {
     console.error('用户角色获取失败', err);
+    setTimeout(() => (window.location.href = 'login.html'), 1000);
     return null;
   }
 }

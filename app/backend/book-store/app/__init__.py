@@ -8,7 +8,7 @@ from flasgger import Swagger
 from pymongo import MongoClient
 
 # ✅ X-Ray 相关导入
-from aws_xray_sdk.core import xray_recorder, patch_all
+from aws_xray_sdk.core import xray_recorder, patch
 from aws_xray_sdk.ext.flask.middleware import XRayMiddleware
 
 from .config import (
@@ -26,6 +26,7 @@ app = Flask(__name__)
 
 # ✅ 配置 X-Ray 服务名
 xray_recorder.configure(service='book-store')
+patch(['requests'])
 XRayMiddleware(app, xray_recorder)
 
 # 配置 Swagger UI 安全定义
