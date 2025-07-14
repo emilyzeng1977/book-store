@@ -7,6 +7,12 @@ import { displayAllOrders } from './orders.js';
 document.addEventListener('DOMContentLoaded', async () => {
   // 检查当前登录用户信息，并传入回调
   checkUserRole(async (user) => {
+    if (!user || !user.role) {
+      alert('无法获取用户信息，已登出');
+      logout();
+      return;
+    }
+
     console.log('当前用户:', user.username, '角色:', user.role);
 
     // 设置全局角色变量供其他模块使用

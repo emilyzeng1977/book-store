@@ -14,7 +14,7 @@ resource "aws_cloudwatch_log_group" "book_store" {
 # ECS 任务执行角色（IAM Role）拉镜像、写日志
 # ---------------------------
 resource "aws_iam_role" "book_store_execution_role" {
-  name = "${local.book_store_container_name}_execution_role"  # 角色名称
+  name = "${local.book_store_container_name}_execution_role"
 
   # 定义允许哪些服务可以假设此角色，这里是ecs-tasks服务
   assume_role_policy = jsonencode({
@@ -36,7 +36,7 @@ resource "aws_iam_role_policy_attachment" "book_store_execution_policy_attach" {
 }
 
 # ---------------------------
-# ECS 容器内部代码执行 AWS 操作（如 Cognito）
+# ECS 容器内部执行 Cognito 和 X-Ray
 # ---------------------------
 resource "aws_iam_role" "book_store_task_role" {
   name = "${local.book_store_container_name}_task_role"
@@ -80,8 +80,51 @@ resource "aws_iam_role_policy_attachment" "book_store_task_role_policy_attach" {
   policy_arn = aws_iam_policy.book_store_cognito_access_policy.arn
 }
 
+# --- X-Ray Access ---
+resource "aws_iam_role_policy" "book_store_xray_policy" {
+  name = "${local.book_store_container_name}-xray-policy"
+  role = aws_iam_role.book_store_task_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "xray:PutTraceSegments",
+          "xray:PutTelemetryRecords",
+          "xray:GetSamplingRules",
+          "xray:GetSamplingTargets",
+          "xray:GetSamplingStatisticSummaries"
+        ],
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+# ✅ --- NEW: CloudWatch Logs Read for X-Ray Console Integration ---
+resource "aws_iam_role_policy" "book_store_logs_access_policy" {
+  name = "${local.book_store_container_name}-logs-access"
+  role = aws_iam_role.book_store_task_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [{
+      Effect = "Allow",
+      Action = [
+        "logs:GetLogEvents",
+        "logs:FilterLogEvents",
+        "logs:DescribeLogGroups",
+        "logs:DescribeLogStreams"
+      ],
+      Resource = "*"
+    }]
+  })
+}
+
 # ---------------------------
-# 定义 ECS Fargate 的任务定义，包括容器配置、日志设置、CPU/内存等
+# ECS Task Definition with X-Ray Daemon
 # ---------------------------
 resource "aws_ecs_task_definition" "book_store" {
   family                   = "${local.book_store_container_name}-task"
@@ -89,8 +132,8 @@ resource "aws_ecs_task_definition" "book_store" {
   network_mode             = "awsvpc"
   cpu                      = "256"
   memory                   = "512"
-  execution_role_arn = aws_iam_role.book_store_execution_role.arn  # 拉镜像、写日志
-  task_role_arn = aws_iam_role.book_store_task_role.arn
+  execution_role_arn       = aws_iam_role.book_store_execution_role.arn
+  task_role_arn            = aws_iam_role.book_store_task_role.arn
 
   depends_on = [aws_cloudwatch_log_group.book_store]
 
@@ -104,26 +147,57 @@ resource "aws_ecs_task_definition" "book_store" {
           protocol      = "tcp"
         }
       ]
+      essential = true
       environment = [
         {
           name  = "PRICE_SERVER"
           value = "book_store_price.local"
+        },
+        {
+          name  = "AWS_XRAY_DAEMON_ADDRESS"
+          value = "127.0.0.1:2000"
         }
       ]
       logConfiguration = {
         logDriver = "awslogs"
         options = {
-          "awslogs-group" = aws_cloudwatch_log_group.book_store.name # CloudWatch Log Group 名称
-          "awslogs-region" = "ap-southeast-2"                        # 区域
-          "awslogs-stream-prefix" = "${local.book_store_container_name}"        # 日志流前缀，方便区分不同任务或容器
+          "awslogs-group"         = aws_cloudwatch_log_group.book_store.name
+          "awslogs-region"        = "ap-southeast-2"
+          "awslogs-stream-prefix" = "${local.book_store_container_name}"
         }
+      }
+    },
+    {
+      name      = "xray-daemon"
+      image     = "amazon/aws-xray-daemon"
+      essential = false
+      portMappings = [
+        {
+          containerPort = 2000
+          protocol      = "udp"
+        }
+      ]
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = aws_cloudwatch_log_group.book_store.name
+          "awslogs-region"        = "ap-southeast-2"
+          "awslogs-stream-prefix" = "xray"
+        }
+      }
+      healthCheck = {
+        command     = ["CMD-SHELL", "nc -z 127.0.0.1 2000 || exit 1"]
+        interval    = 30
+        timeout     = 5
+        retries     = 3
+        startPeriod = 10
       }
     }
   ])
 }
 
 # ---------------------------
-# 创建 ECS Service，用于部署并运行 Fargate 容器任务
+# ECS Fargate Service
 # ---------------------------
 resource "aws_ecs_service" "book_store" {
   name            = "${local.book_store_container_name}-service"

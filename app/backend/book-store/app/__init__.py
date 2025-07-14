@@ -7,6 +7,10 @@ from flasgger import Swagger
 
 from pymongo import MongoClient
 
+# ✅ X-Ray 相关导入
+from aws_xray_sdk.core import xray_recorder, patch
+from aws_xray_sdk.ext.flask.middleware import XRayMiddleware
+
 from .config import (
     ATLAS_MONGO_USER,
     ATLAS_MONGO_PASSWORD,
@@ -19,6 +23,11 @@ from .config import (
 
 # 创建 Flask app 实例
 app = Flask(__name__)
+
+# ✅ 配置 X-Ray 服务名
+xray_recorder.configure(service='book-store')
+patch(['requests'])
+XRayMiddleware(app, xray_recorder)
 
 # 配置 Swagger UI 安全定义
 app.config['SWAGGER'] = {
@@ -69,6 +78,17 @@ except Exception as e:
 app.cognito_client = cognito_client
 app.db = db
 app.collection = collection
+
+# 全局响应钩子：将 trace ID 添加到响应头
+@app.after_request
+def add_trace_id_header(response):
+    try:
+        trace_id = xray_recorder.current_segment().trace_id
+        response.headers['X-Amzn-Trace-Id'] = trace_id
+        response.headers['Access-Control-Expose-Headers'] = 'X-Amzn-Trace-Id'
+    except Exception:
+        pass
+    return response
 
 # 导入路由
 from .routes_auth import *

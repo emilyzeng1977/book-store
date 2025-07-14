@@ -106,9 +106,17 @@ export function setupPriceQueryUI() {
     const bookId = select.value;
     const res = await fetchWithAuth(`${API_BASE_URL}/books/${bookId}/price`);
 
+    // 提取 Trace ID，即使请求失败也显示
+    const rawTraceHeader = res.headers.get('x-amzn-trace-id');
+    const traceId = rawTraceHeader ? rawTraceHeader.replace(/^Root=/, '') : '无';
+
     if (!res.ok) {
-      resultDiv.innerHTML = `<p class="error">查询失败</p>`;
-      return;
+        resultDiv.innerHTML = `
+          <p class="error">
+            查询失败
+            <span class="trace-id">(Trace ID: <code>${traceId}</code>)</span>
+          </p>`;
+        return;
     }
 
     const data = await res.json();
@@ -116,7 +124,7 @@ export function setupPriceQueryUI() {
       <p class="price-result">
         <span class="book-id">${data.book_id}</span> 的价格是
         <span class="book-price">$${data.price}</span>
-        <span class="trace-id">(Trace ID: <code>${data.changed_trace_id || '无'}</code>)</span>
+        <span class="trace-id">(Trace ID: <code>${traceId}</code>)</span>
       </p>
     `;
   }
