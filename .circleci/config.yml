@@ -1,5 +1,8 @@
 version: 2.1
 
+orbs:
+  git: circleci/git@3.0.3
+
 executors:
   docker-executor:
     docker:
@@ -7,52 +10,129 @@ executors:
     resource_class: medium
 
 jobs:
-  approve:
+  approve-on-develop:
     executor: docker-executor
     steps:
       - run:
-          name: Await manual approval
-          command: echo "Waiting for approval"
+          name: Manual approval on develop branch
+          command: echo "Manual approval required on develop"
+
+  create-release-branch:
+    executor: docker-executor
+    steps:
+      - checkout
+      - run:
+          name: Simulate Create release branch
+          command: |
+            echo "Simulating: git fetch origin"
+            echo "Simulating: git checkout -b release/$(date +%Y%m%d%H%M%S) origin/develop"
+            echo "Simulating: git push origin HEAD"
+
+  bump-release-version:
+    executor: docker-executor
+    environment:
+      VERSION_FILE: app/backend/book-store/version.txt
+    steps:
+      - checkout
+      - run:
+          name: Simulate Update version.txt
+          command: |
+            VERSION=$(echo "$CIRCLE_BRANCH" | sed 's/\//-/g')
+            echo "Simulating: echo $VERSION > $VERSION_FILE"
+            echo "Simulating: git config user"
+            echo "Simulating: git add $VERSION_FILE"
+            echo "Simulating: git commit -m 'chore: bump version to $VERSION'"
+            echo "Simulating: git push origin $CIRCLE_BRANCH"
 
   build-and-push-book-store:
     executor: docker-executor
     environment:
-      PROJECT_DIR: /root/project/app/backend/book-store
-      VERSION_FILE: /root/project/app/backend/book-store/version.txt
+      PROJECT_DIR: app/backend/book-store
+      VERSION_FILE: app/backend/book-store/version.txt
     steps:
       - checkout
       - setup_remote_docker
       - run:
-          name: Prepare Environment
+          name: Simulate Build Docker Image
           command: |
             cd $PROJECT_DIR
-            if [ "$BRANCH_NAME" != "develop" ] && [ "$BRANCH_NAME" != "main" ]; then 
-              VERSION=$(echo "$CIRCLE_BRANCH" | sed 's/\//-/g')        
-              echo $VERSION > $VERSION_FILE
-            fi
+            VERSION=$(cat $VERSION_FILE || echo "dev")
+            echo "Simulating: docker build -t zengemily79/book-store:$VERSION ."
       - run:
-          name: Build Docker Image (book-store)
+          name: Simulate Login to Docker Hub
           command: |
-            cd $PROJECT_DIR
-            VERSION=$(cat $VERSION_FILE)
-            docker build -t zengemily79/book-store:$VERSION .
+            echo "Simulating: docker login as $DOCKERHUB_USERNAME"
       - run:
-          name: Login to Docker Hub
+          name: Simulate Push Docker Image
           command: |
-            echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+            echo "Simulating: docker push zengemily79/book-store:\$VERSION"
+
+  approve-on-release-branch:
+    executor: docker-executor
+    steps:
       - run:
-          name: Push Docker Image (book-store)
+          name: Second manual approval
+          command: echo "Approve release to merge"
+
+  merge-release:
+    executor: docker-executor
+    steps:
+      - checkout
+      - run:
+          name: Simulate Merge to main and develop
           command: |
-            cd $PROJECT_DIR
-            VERSION=$(cat $VERSION_FILE)
-            docker push zengemily79/book-store:$VERSION
+            echo "Simulating: git config user"
+            echo "Simulating: git fetch origin"
+            echo "Simulating: git checkout main"
+            echo "Simulating: git merge --no-ff $CIRCLE_BRANCH"
+            echo "Simulating: git push origin main"
+            echo "Simulating: git checkout develop"
+            NEXT_VERSION=$(date +%Y%m%d%H%M%S)-SNAPSHOT
+            echo "Simulating: bump version to $NEXT_VERSION"
+            echo "Simulating: git commit and push to develop"
 
 workflows:
   version: 2
-  build-and-deploy:
+  release-flow:
     jobs:
-      - approve:
+      - approve-on-develop:
           type: approval
+          filters:
+            branches:
+              only: develop
+
+      - create-release-branch:
+          requires:
+            - approve-on-develop
+          filters:
+            branches:
+              only: develop
+
+      - bump-release-version:
+          requires:
+            - create-release-branch
+          filters:
+            branches:
+              only: /^release\/.+/
+
       - build-and-push-book-store:
           requires:
-            - approve
+            - bump-release-version
+          filters:
+            branches:
+              only: /^release\/.+/
+
+      - approve-on-release-branch:
+          type: approval
+          requires:
+            - build-and-push-book-store
+          filters:
+            branches:
+              only: /^release\/.+/
+
+      - merge-release:
+          requires:
+            - approve-on-release-branch
+          filters:
+            branches:
+              only: /^release\/.+/
