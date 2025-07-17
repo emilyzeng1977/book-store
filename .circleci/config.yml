@@ -1,8 +1,5 @@
 version: 2.1
 
-orbs:
-  git: circleci/git@1.4.0
-
 executors:
   docker-executor:
     docker:
