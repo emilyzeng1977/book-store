@@ -92,6 +92,10 @@ workflows:
             - approve-to-push-image
       - approve-to-create-release-branch:
           type: approval
+          filters:
+            branches:
+              only:
+                - develop
       - create-release-branch:
           requires:
             - approve-to-create-release-branch
