@@ -4,7 +4,6 @@ executors:
   docker-executor:
     docker:
       - image: cimg/python:3.12
-    resource_class: medium
 
 jobs:
   approve-on-develop:
@@ -40,9 +39,12 @@ jobs:
             git checkout -b release/$RELEASE_VERSION origin/develop
 
             bump2version --new-version ${RELEASE_VERSION}-RC --allow-dirty --verbose patch
+            cat .bumpversion.cfg
+            cat app/backend/book-store/version.txt
             # 手动覆盖 version.txt 内容，保证正确
             echo "${RELEASE_VERSION}-RC" > $VERSION_FILE
-
+            cat app/backend/book-store/version.txt
+            
             git config user.email "ci@example.com"
             git config user.name "CircleCI"
             git commit -am "chore: bump version to ${RELEASE_VERSION}-RC"
