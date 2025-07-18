@@ -6,6 +6,21 @@ executors:
       - image: cimg/python:3.12
 
 jobs:
+  build:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - checkout
+      - run:
+          name: Checkout current branch explicitly
+          command: |
+            git fetch origin
+            git checkout $CIRCLE_BRANCH
+
+      - run:
+          name: Dummy build step
+          command: echo "Build - to be implemented"
+
   approve-on-develop:
     executor: docker-executor
     steps:
@@ -13,7 +28,7 @@ jobs:
           name: Manual approval before releasing
           command: echo "Manual approval to release required"
 
-  create-release-branch-and-bump:
+  create-release-branch:
     executor: docker-executor
     environment:
       VERSION_FILE: app/backend/book-store/version.txt
@@ -33,23 +48,26 @@ jobs:
             
             echo "export VERSION=$VERSION" >> "$BASH_ENV"
             echo "export RELEASE_VERSION=$RELEASE_VERSION" >> "$BASH_ENV"
+
       - run:
-          name: Configure Git and bump version
+          name: Configure Git user and remote
           command: |
             source "$BASH_ENV"
-
-            # Setup Git config
+      
             git config user.email "ci@example.com"
             git config user.name "CircleCI"
-
-            # Override remote with token authentication
             git remote set-url origin https://${GIT_AUTH_TOKEN}@github.com/emilyzeng1977/book-store.git
 
+      - run:
+          name: Checkout release branch from develop
+          command: |
             git fetch origin
             git checkout -b release/$RELEASE_VERSION origin/develop
 
+      - run:
+          name: Bump version and push release branch
+          command: |
             bump2version --current-version $VERSION --new-version ${RELEASE_VERSION}-RC patch --verbose
-
             git commit -am "chore: bump version to ${RELEASE_VERSION}-RC"
             git push origin release/$RELEASE_VERSION
 
@@ -57,9 +75,10 @@ workflows:
   version: 2
   release-flow:
     jobs:
+      - build # build 不限制分支，任何分支都会跑
       - approve-on-develop:
           type: approval
-      - create-release-branch-and-bump:
+      - create-release-branch:
           requires:
             - approve-on-develop
           filters:
