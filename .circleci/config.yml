@@ -86,9 +86,10 @@ workflows:
       - build
       - approve-to-push-image:
           type: approval
-      - push-image:
           requires:
             - build
+      - push-image:
+          requires:
             - approve-to-push-image
       - approve-to-create-release-branch:
           type: approval
