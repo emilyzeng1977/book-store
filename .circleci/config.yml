@@ -40,7 +40,6 @@ jobs:
             git fetch origin
             git checkout -b release/$RELEASE_VERSION origin/develop
 
-            bump2version --new-version ${RELEASE_VERSION}-RC --allow-dirty --verbose patch
             bump2version --current-version $VERSION --new-version ${RELEASE_VERSION}-RC patch --verbose
             cat app/backend/book-store/version.txt
             
