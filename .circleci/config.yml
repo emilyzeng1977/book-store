@@ -31,17 +31,24 @@ jobs:
             RELEASE_VERSION=$(sed 's/-SNAPSHOT//' $VERSION_FILE)
             echo "export VERSION=$(cat $VERSION_FILE)" >> $BASH_ENV
             echo "export RELEASE_VERSION=$RELEASE_VERSION" >> "$BASH_ENV"
+
       - run:
-          name: Create release branch and bump to RC
+          name: Configure Git and bump version
           command: |
             source "$BASH_ENV"
+
+            # Setup Git config
+            git config user.email "ci@example.com"
+            git config user.name "CircleCI"
+
+            # Override remote with token authentication
+            git remote set-url origin https://${GIT_AUTH_TOKEN}@github.com/your-username/your-repo.git
+
             git fetch origin
             git checkout -b release/$RELEASE_VERSION origin/develop
 
             bump2version --current-version $VERSION --new-version ${RELEASE_VERSION}-RC patch --verbose
-            
-            git config user.email "ci@example.com"
-            git config user.name "CircleCI"
+
             git commit -am "chore: bump version to ${RELEASE_VERSION}-RC"
             git push origin release/$RELEASE_VERSION
 
