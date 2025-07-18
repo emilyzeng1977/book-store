@@ -12,12 +12,6 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Checkout current branch explicitly
-          command: |
-            git fetch origin
-            git checkout $CIRCLE_BRANCH
-
-      - run:
           name: Dummy build step
           command: echo "Build - to be implemented"
 
