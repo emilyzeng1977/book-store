@@ -7,13 +7,12 @@ executors:
 
 jobs:
   build:
-    docker:
-      - image: cimg/base:stable
+    executor: docker-executor
     steps:
       - checkout
       - run:
           name: Dummy build step
-          command:
+          command: echo "Build complete"
 
   approve-to-push-image:
     executor: docker-executor
@@ -23,8 +22,7 @@ jobs:
           command: echo "Manual approval to push image"
 
   push-image:
-    docker:
-      - image: cimg/base:stable
+    executor: docker-executor
     steps:
       - run:
           name: Dummy Image Build and Push
@@ -54,7 +52,6 @@ jobs:
           command: |
             VERSION=$(<"$VERSION_FILE")
             RELEASE_VERSION="${VERSION%-SNAPSHOT}"
-            
             echo "export VERSION=$VERSION" >> "$BASH_ENV"
             echo "export RELEASE_VERSION=$RELEASE_VERSION" >> "$BASH_ENV"
 
@@ -62,7 +59,6 @@ jobs:
           name: Configure Git user and remote
           command: |
             source "$BASH_ENV"
-      
             git config user.email "ci@example.com"
             git config user.name "CircleCI"
             git remote set-url origin https://${GIT_AUTH_TOKEN}@github.com/emilyzeng1977/book-store.git
@@ -70,21 +66,24 @@ jobs:
       - run:
           name: Checkout release branch from develop
           command: |
+            source "$BASH_ENV"
             git fetch origin
             git checkout -b release/$RELEASE_VERSION origin/develop
 
       - run:
           name: Bump version and push release branch
           command: |
-            bump2version --current-version $VERSION --new-version ${RELEASE_VERSION}-RC patch --verbose
-            git commit -am "chore: bump version to ${RELEASE_VERSION}-RC"
+            source "$BASH_ENV"
+            bump2version --new-version ${RELEASE_VERSION}-RC --verbose
+            git add .
+            git commit -m "chore: bump version to ${RELEASE_VERSION}-RC"
             git push origin release/$RELEASE_VERSION
 
 workflows:
   version: 2
   release-flow:
     jobs:
-      - build # build 不限制分支，任何分支都会跑
+      - build
       - approve-to-push-image:
           type: approval
       - push-image:
@@ -95,7 +94,7 @@ workflows:
           type: approval
       - create-release-branch:
           requires:
-            - approve-on-develop
+            - approve-to-create-release-branch
           filters:
             branches:
               only:
