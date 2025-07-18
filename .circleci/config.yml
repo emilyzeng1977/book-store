@@ -29,8 +29,10 @@ jobs:
           name: Get release version (strip -SNAPSHOT)
           command: |
             RELEASE_VERSION=$(sed 's/-SNAPSHOT//' $VERSION_FILE)
+            echo "export VERSION=$(cat $VERSION_FILE)" >> $BASH_ENV
             echo "export RELEASE_VERSION=$RELEASE_VERSION" >> "$BASH_ENV"
-
+            echo "==== Current content of \$BASH_ENV ===="
+            cat $BASH_ENV
       - run:
           name: Create release branch and bump to RC
           command: |
@@ -39,16 +41,13 @@ jobs:
             git checkout -b release/$RELEASE_VERSION origin/develop
 
             bump2version --new-version ${RELEASE_VERSION}-RC --allow-dirty --verbose patch
-            cat .bumpversion.cfg
-            cat app/backend/book-store/version.txt
-            # 手动覆盖 version.txt 内容，保证正确
-            echo "${RELEASE_VERSION}-RC" > $VERSION_FILE
+            bump2version --current-version $VERSION --new-version ${RELEASE_VERSION}-RC patch --verbose
             cat app/backend/book-store/version.txt
             
-            git config user.email "ci@example.com"
-            git config user.name "CircleCI"
-            git commit -am "chore: bump version to ${RELEASE_VERSION}-RC"
-            git push origin release/$RELEASE_VERSION
+#            git config user.email "ci@example.com"
+#            git config user.name "CircleCI"
+#            git commit -am "chore: bump version to ${RELEASE_VERSION}-RC"
+#            git push origin release/$RELEASE_VERSION
 
 workflows:
   version: 2
