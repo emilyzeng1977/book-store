@@ -13,9 +13,24 @@ jobs:
       - checkout
       - run:
           name: Dummy build step
-          command: echo "Build - to be implemented"
+          command:
 
-  approve-on-develop:
+  approve-to-push-image:
+    executor: docker-executor
+    steps:
+      - run:
+          name: Manual approval before push image
+          command: echo "Manual approval to push image"
+
+  push-image:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - run:
+          name: Dummy Image Build and Push
+          command: echo "Build and push Docker image placeholder"
+
+  approve-to-create-release-branch:
     executor: docker-executor
     steps:
       - run:
@@ -70,7 +85,13 @@ workflows:
   release-flow:
     jobs:
       - build # build 不限制分支，任何分支都会跑
-      - approve-on-develop:
+      - approve-to-push-image:
+          type: approval
+      - push-image:
+          requires:
+            - build
+            - approve-to-push-image
+      - approve-to-create-release-branch:
           type: approval
       - create-release-branch:
           requires:
