@@ -3,7 +3,7 @@ version: 2.1
 executors:
   docker-executor:
     docker:
-      - image: docker:24
+      - image: cimg/python:3.12
     resource_class: medium
 
 jobs:
@@ -11,82 +11,42 @@ jobs:
     executor: docker-executor
     steps:
       - run:
-          name: Manual approval on develop branch
-          command: echo "Manual approval required on develop"
+          name: Manual approval before releasing
+          command: echo "Manual approval to release required"
 
-  create-release-branch:
-    executor: docker-executor
-    steps:
-      - checkout
-      - run:
-          name: Simulate Create release branch
-          command: |
-            echo "Simulating: git fetch origin"
-            echo "Simulating: git checkout -b release/$(date +%Y%m%d%H%M%S) origin/develop"
-            echo "Simulating: git push origin HEAD"
-
-  bump-release-version:
+  create-release-branch-and-bump:
     executor: docker-executor
     environment:
       VERSION_FILE: app/backend/book-store/version.txt
     steps:
       - checkout
-      - run:
-          name: Simulate Update version.txt
-          command: |
-            VERSION=$(echo "$CIRCLE_BRANCH" | sed 's/\//-/g')
-            echo "Simulating: echo $VERSION > $VERSION_FILE"
-            echo "Simulating: git config user"
-            echo "Simulating: git add $VERSION_FILE"
-            echo "Simulating: git commit -m 'chore: bump version to $VERSION'"
-            echo "Simulating: git push origin $CIRCLE_BRANCH"
 
-  build-and-push-book-store:
-    executor: docker-executor
-    environment:
-      PROJECT_DIR: app/backend/book-store
-      VERSION_FILE: app/backend/book-store/version.txt
-    steps:
-      - checkout
-      - setup_remote_docker
       - run:
-          name: Simulate Build Docker Image
+          name: Install bump2version
           command: |
-            cd $PROJECT_DIR
-            VERSION=$(cat $VERSION_FILE || echo "dev")
-            echo "Simulating: docker build -t zengemily79/book-store:$VERSION ."
-      - run:
-          name: Simulate Login to Docker Hub
-          command: |
-            echo "Simulating: docker login as $DOCKERHUB_USERNAME"
-      - run:
-          name: Simulate Push Docker Image
-          command: |
-            echo "Simulating: docker push zengemily79/book-store:\$VERSION"
+            pip install bump2version
 
-  approve-on-release-branch:
-    executor: docker-executor
-    steps:
       - run:
-          name: Second manual approval
-          command: echo "Approve release to merge"
-
-  merge-release:
-    executor: docker-executor
-    steps:
-      - checkout
-      - run:
-          name: Simulate Merge to main and develop
+          name: Get release version (strip -SNAPSHOT)
           command: |
-            echo "Simulating: git config user"
-            echo "Simulating: git fetch origin"
-            echo "Simulating: git checkout main"
-            echo "Simulating: git merge --no-ff $CIRCLE_BRANCH"
-            echo "Simulating: git push origin main"
-            echo "Simulating: git checkout develop"
-            NEXT_VERSION=$(date +%Y%m%d%H%M%S)-SNAPSHOT
-            echo "Simulating: bump version to $NEXT_VERSION"
-            echo "Simulating: git commit and push to develop"
+            RELEASE_VERSION=$(sed 's/-SNAPSHOT//' $VERSION_FILE)
+            echo "export RELEASE_VERSION=$RELEASE_VERSION" >> "$BASH_ENV"
+
+      - run:
+          name: Create release branch and bump to RC
+          command: |
+            source "$BASH_ENV"
+            git fetch origin
+            git checkout -b release/$RELEASE_VERSION origin/develop
+
+            bump2version --new-version ${RELEASE_VERSION}-RC --allow-dirty --verbose patch
+            # 手动覆盖 version.txt 内容，保证正确
+            echo "${RELEASE_VERSION}-RC" > $VERSION_FILE
+
+            git config user.email "ci@example.com"
+            git config user.name "CircleCI"
+            git commit -am "chore: bump version to ${RELEASE_VERSION}-RC"
+            git push origin release/$RELEASE_VERSION
 
 workflows:
   version: 2
@@ -94,42 +54,6 @@ workflows:
     jobs:
       - approve-on-develop:
           type: approval
-          filters:
-            branches:
-              only: develop
-
-      - create-release-branch:
+      - create-release-branch-and-bump:
           requires:
             - approve-on-develop
-          filters:
-            branches:
-              only: develop
-
-      - bump-release-version:
-          requires:
-            - create-release-branch
-          filters:
-            branches:
-              only: /^release\/.+/
-
-      - build-and-push-book-store:
-          requires:
-            - bump-release-version
-          filters:
-            branches:
-              only: /^release\/.+/
-
-      - approve-on-release-branch:
-          type: approval
-          requires:
-            - build-and-push-book-store
-          filters:
-            branches:
-              only: /^release\/.+/
-
-      - merge-release:
-          requires:
-            - approve-on-release-branch
-          filters:
-            branches:
-              only: /^release\/.+/
