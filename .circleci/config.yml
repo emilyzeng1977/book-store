@@ -28,10 +28,11 @@ jobs:
       - run:
           name: Get release version (strip -SNAPSHOT)
           command: |
-            RELEASE_VERSION=$(sed 's/-SNAPSHOT//' $VERSION_FILE)
-            echo "export VERSION=$(cat $VERSION_FILE)" >> $BASH_ENV
+            VERSION=$(<"$VERSION_FILE")
+            RELEASE_VERSION="${VERSION%-SNAPSHOT}"
+            
+            echo "export VERSION=$VERSION" >> "$BASH_ENV"
             echo "export RELEASE_VERSION=$RELEASE_VERSION" >> "$BASH_ENV"
-
       - run:
           name: Configure Git and bump version
           command: |
@@ -61,3 +62,7 @@ workflows:
       - create-release-branch-and-bump:
           requires:
             - approve-on-develop
+          filters:
+            branches:
+              only:
+                - develop
