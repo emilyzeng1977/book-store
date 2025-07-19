@@ -89,7 +89,7 @@ jobs:
           name: Load and prepare version info
           command: |
             RC_VERSION=$(<"$VERSION_FILE")
-            RELEASE_VERSION="${VERSION%-RC}"
+            RELEASE_VERSION="${RC_VERSION%-RC}"
             echo "export RC_VERSION=${RC_VERSION}" >> "$BASH_ENV"
             echo "export RELEASE_VERSION=${RELEASE_VERSION}" >> "$BASH_ENV"
       - run:
