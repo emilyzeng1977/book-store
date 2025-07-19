@@ -32,8 +32,8 @@ jobs:
     executor: docker-executor
     steps:
       - run:
-          name: Manual approval before releasing
-          command: echo "Manual approval to release required"
+          name: Manual approval before creating release branch
+          command: echo "Manual approval to create release branch required"
 
   create-release-branch:
     executor: docker-executor
@@ -79,6 +79,14 @@ jobs:
             git commit -m "chore: bump version to ${RELEASE_VERSION}-RC"
             git push origin release/$RELEASE_VERSION
 
+  approve-to-start-release:
+    executor: docker-executor
+    steps:
+      - run:
+          name: Manual approval before starting release
+          command: echo "Manual approval to start release required"
+
+
 workflows:
   version: 2
   release-flow:
@@ -104,3 +112,9 @@ workflows:
             branches:
               only:
                 - develop
+      - approve-to-start-release:
+          type: approval
+          filters:
+            branches:
+              only:
+                - /^release\/.*/
