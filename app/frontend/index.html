@@ -1,37 +1,120 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>图书管理系统</title>
-  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="icon" href="/favicon.ico" type="image/x-icon" />
 </head>
 <body>
-  <h1>图书管理系统</h1>
-
-  <ul class="book-list" id="book-list">
-    <!-- Book items will be added here dynamically -->
-  </ul>
-
-  <div>
-    <button class="btn" onclick="openAddBookModal()">添加书籍</button>
+  <!-- 当前用户信息 -->
+  <div id="current-user-wrapper">
+    <div id="current-user" class="user-info">
+      当前用户：<span id="current-username">加载中...</span>（<span id="current-role">加载中...</span>）
+    </div>
+    <button id="logout-btn" class="btn logout-btn">退出登录</button>
   </div>
 
-  <div id="addEditBookModal" class="modal">
-    <div class="modal-content">
-      <span class="close" onclick="closeAddEditBookModal()">&times;</span>
-      <h2 id="modal-title">添加书籍</h2>
-      <form id="book-form">
-        <input type="hidden" id="book-id">
-        <label for="title">书名：</label>
-        <input type="text" id="title" name="title" required><br><br>
-        <label for="author">作者：</label>
-        <input type="text" id="author" name="author" required><br><br>
-        <button type="submit" class="btn">保存</button>
-      </form>
+  <!-- 价格查询区域 -->
+  <div id="price-query-wrapper" class="section">
+    <h2 class="section-title">查询图书价格</h2>
+
+    <div class="form-group">
+      <label for="price-book-id">选择书籍编号：</label>
+      <select id="price-book-id" class="select-input">
+        <!-- JavaScript 动态插入选项 -->
+      </select>
+      <button id="check-price-btn" class="btn">查询价格</button>
+    </div>
+
+    <div id="price-result" class="price-result">
+      <!-- 查询结果将显示在这里 -->
     </div>
   </div>
 
-  <script src="js/scripts_2.js"></script>
+  <div id="book-section">
+    <!-- 图书列表标题 -->
+    <h2 class="section-title">图书列表</h2>
+
+    <!-- 图书列表容器 -->
+    <table id="book-table" class="book-table">
+      <thead>
+        <tr>
+          <th>编号</th>
+          <th>书名</th>
+          <th>作者</th>
+          <th>简介</th>
+          <th>操作</th>
+          <th>状态</th>
+        </tr>
+      </thead>
+      <tbody id="book-list">
+        <!-- JavaScript 会动态插入行 -->
+      </tbody>
+    </table>
+    <!-- 添加/编辑书籍模态框 -->
+    <div id="addEditBookModal" class="modal">
+      <div class="modal-content">
+        <span class="close" id="close-modal-btn">&times;</span>
+        <h2 id="modal-title">添加书籍</h2>
+        <form id="book-form">
+          <input type="hidden" id="book-id" />
+
+          <label for="title">书名：</label>
+          <input type="text" id="title" required /><br /><br />
+
+          <label for="author">作者：</label>
+          <input type="text" id="author" required /><br /><br />
+
+          <label for="description">简介：</label>
+          <textarea id="description" rows="3" style="width: 100%;"></textarea><br /><br />
+
+          <button type="submit" class="btn">保存</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- 添加书籍按钮 -->
+    <div>
+      <button class="btn" id="add-book-btn">添加书籍</button>
+    </div>
+  </div>
+
+  <!-- 用户管理区域（初始隐藏） -->
+  <div id="user-section" style="display: none;">
+    <h2 class="section-title">用户列表</h2>
+    <table id="user-table" class="book-table">
+      <thead>
+        <tr>
+          <th>用户名</th>
+          <th>角色</th>
+          <th>创建时间</th>
+        </tr>
+      </thead>
+      <tbody id="user-list">
+        <!-- JavaScript 会动态插入内容 -->
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 订单列表区域（仅管理员可见） -->
+  <div id="order-section" style="display: none;">
+    <h2 class="section-title">订单列表</h2>
+    <table id="order-table" class="book-table">
+      <thead>
+        <tr>
+          <th>用户名</th>
+          <th>书籍编号</th>
+          <th>购买时间</th>
+        </tr>
+      </thead>
+      <tbody id="order-list">
+        <!-- JavaScript 会动态插入内容 -->
+      </tbody>
+    </table>
+  </div>
+
+  <script type="module" src="js/default/main.js"></script>
 </body>
 </html>

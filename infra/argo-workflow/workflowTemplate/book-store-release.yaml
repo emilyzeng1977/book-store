@@ -21,66 +21,117 @@ spec:
       value: book-store
     - name: dockerhub-username
       value: zengemily79
-    - name: image-tag
-      value: latest
+    - name: version
+      value: 1.0.0
 
   templates:
   - name: main
-    steps:
-    - - name: clone-repo
-        template: checkout-project
+    dag:
+      tasks:
+      - name: create-release-branch
+        template: create-release-branch-template
         arguments:
           parameters:
           - name: github-username
             value: "{{workflow.parameters.github-username}}"
           - name: project-name
             value: "{{workflow.parameters.project-name}}"
-    - - name: approval-step
-        template: approval
-    - - name: build-and-push-image
-        template: kaniko-build-and-push
+          - name: version
+            value: "{{workflow.parameters.version}}"
+
+      - name: build-and-push-snapshot-image
+        template: build-and-push-snapshot-image-template
         arguments:
           parameters:
           - name: project-name
             value: "{{workflow.parameters.project-name}}"
           - name: dockerhub-username
             value: "{{workflow.parameters.dockerhub-username}}"
-          - name: image-tag
-            value: "{{workflow.parameters.image-tag}}"
+          - name: version
+            value: "{{workflow.parameters.version}}-SNAPSHOT"
+        dependencies:
+        - create-release-branch
 
-  # Step 1: Clone GitHub repository
-  - name: checkout-project
+      - name: deploy-for-test
+        template: deploy-for-test-template
+        dependencies:
+        - build-and-push-snapshot-image
+
+      - name: approve-to-start-release
+        template: approval-template
+        dependencies:
+        - deploy-for-test
+
+      - name: merge-back-to-main
+        template: echo-template
+        arguments:
+          parameters:
+          - name: message
+            value: "Merge back to main..."
+        dependencies:
+        - approve-to-start-release
+
+      - name: merge-back-to-develop
+        template: echo-template
+        arguments:
+          parameters:
+          - name: message
+            value: "Merge back to develop..."
+        dependencies:
+        - approve-to-start-release
+
+      - name: approve-to-generate-production-image
+        template: approval-template
+        dependencies:
+        - merge-back-to-main
+        - merge-back-to-develop
+
+      - name: build-and-push-production-image
+        template: echo-template
+        arguments:
+          parameters:
+          - name: message
+            value: "Generating {{workflow.parameters.project-name}}:{{workflow.parameters.version}}..."
+        dependencies:
+        - approve-to-generate-production-image
+
+  - name: create-release-branch-template
     inputs:
       parameters:
       - name: github-username
       - name: project-name
+      - name: version
     container:
       image: alpine/git:latest
       volumeMounts:
         - mountPath: /workspace
           name: workspace
+      env:
+        - name: GITHUB_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: github-secret
+              key: token
       command: [sh, -c]
       args:
       - |
         echo "Cloning project from GitHub..."
         REPO_URL="https://github.com/{{inputs.parameters.github-username}}/{{inputs.parameters.project-name}}.git"
         git clone $REPO_URL /workspace/{{inputs.parameters.project-name}}
-        
-        if [ $? -ne 0 ]; then
-          echo "Failed to clone the project."
-          exit 1
-        fi
-  # Step 2: Approval step (manual intervention)
-  - name: approval
-    suspend: {}
+        cd /workspace/{{inputs.parameters.project-name}}
+        git checkout develop
+        git checkout -b release/{{inputs.parameters.version}}
+        echo "Updating remote URL for authentication..."
+        git remote set-url origin "https://{{inputs.parameters.github-username}}:${GITHUB_TOKEN}@github.com/{{inputs.parameters.github-username}}/{{inputs.parameters.project-name}}.git"
+        echo "Push..."
+        git push origin release/{{inputs.parameters.version}}
 
-  # Step 3: Build and push Docker image using Kaniko
-  - name: kaniko-build-and-push
+  - name: build-and-push-snapshot-image-template
     inputs:
       parameters:
       - name: project-name
       - name: dockerhub-username
-      - name: image-tag
+      - name: version
     container:
       image: gcr.io/kaniko-project/executor:latest
       volumeMounts:
@@ -95,10 +146,33 @@ spec:
       args:
       - --context=/workspace/{{inputs.parameters.project-name}}/$(BUILD_CONTEXT)
       - --dockerfile=/workspace/{{inputs.parameters.project-name}}/$(BUILD_CONTEXT)/Dockerfile
-      - --destination={{inputs.parameters.dockerhub-username}}/{{inputs.parameters.project-name}}:{{inputs.parameters.image-tag}}
+      - --destination={{inputs.parameters.dockerhub-username}}/{{inputs.parameters.project-name}}:{{inputs.parameters.version}}
       - --verbosity=debug
       - --cache=true
       - --cache-dir=/kaniko/cache
+
+  - name: deploy-for-test-template
+    container:
+      image: alpine:latest
+      command: [sh, -c]
+      args:
+      - |
+        echo "Deploying release environment for version {{workflow.parameters.version}}..."
+
+  - name: approval-template
+    suspend: {}
+
+  - name: echo-template
+    inputs:
+      parameters:
+      - name: message
+    container:
+      image: alpine:latest
+      command: [sh, -c]
+      args:
+      - |
+        echo "{{inputs.parameters.message}}"
+
   volumes:
   - name: kaniko-config
     secret:

@@ -1,0 +1,11 @@
+resources:
+  - ../../base
+
+patches:
+  - target:
+      kind: Deployment
+      name: book-store
+    patch: |-
+      - op: replace
+        path: "/spec/replicas"
+        value: 3
