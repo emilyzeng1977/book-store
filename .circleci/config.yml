@@ -160,7 +160,7 @@ jobs:
           command: |
             VERSION=$(<"$VERSION_FILE")
             RELEASE_VERSION="${VERSION%-RC}"
-            IFS='.' read -r MAJOR MINOR PATCH <<< "${RELEASE_VERSION}"
+            echo "$RELEASE_VERSION" | IFS='.' read -r MAJOR MINOR PATCH
             NEXT_PATCH=$((PATCH + 1))
             NEXT_VERSION="${MAJOR}.${MINOR}.${NEXT_PATCH}-SNAPSHOT"
             bump2version --current-version "$VERSION" --new-version "$NEXT_VERSION" --verbose
