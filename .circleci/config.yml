@@ -114,6 +114,8 @@ workflows:
                 - develop
       - approve-to-start-release:
           type: approval
+          requires:
+            - build
           filters:
             branches:
               only:
