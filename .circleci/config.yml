@@ -210,13 +210,13 @@ workflows:
             branches:
               only:
                 - /^release\/.*/
-#      - merge-back-to-develop:
-#          requires:
-#            - start-release
-#          filters:
-#            branches:
-#              only:
-#                - /^release\/.*/
+      - merge-back-to-develop:
+          requires:
+            - start-release
+          filters:
+            branches:
+              only:
+                - /^release\/.*/
 #      - bump-develop-version:
 #          requires:
 #            - merge-back-to-develop
