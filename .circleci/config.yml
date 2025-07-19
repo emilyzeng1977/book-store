@@ -81,8 +81,80 @@ jobs:
     steps:
       - checkout
 
-      # merge to main
+      - run:
+          name: Install bump2version
+          command: pip install bump2version
 
+      - run:
+          name: Load and prepare version info
+          command: |
+            VERSION=$(<"$VERSION_FILE")
+            RELEASE_VERSION="${VERSION%-RC}"
+            echo "export VERSION=$VERSION" >> "$BASH_ENV"
+            echo "export RELEASE_VERSION=$RELEASE_VERSION" >> "$BASH_ENV"
+
+      - run:
+          name: Configure Git
+          command: |
+            source "$BASH_ENV"
+            git config user.email "ci@example.com"
+            git config user.name "CircleCI"
+            git remote set-url origin https://${GIT_AUTH_TOKEN}@github.com/emilyzeng1977/book-store.git
+
+      - run:
+          name: Merge release branch into main
+          command: |
+            source "$BASH_ENV"
+            git fetch origin
+            git checkout main
+            git merge --no-ff release/$RELEASE_VERSION -m "chore: release $RELEASE_VERSION"
+
+      - run:
+          name: Bump version on main to official release
+          command: |
+            source "$BASH_ENV"
+            bump2version --current-version "$VERSION" --new-version "$RELEASE_VERSION" --verbose
+            git add .
+            git commit -m "chore: set version to $RELEASE_VERSION"
+            git push origin main
+
+
+  merge-back-to-develop:
+    executor: docker-executor
+    environment:
+      VERSION_FILE: app/backend/book-store/version.txt
+    steps:
+      - checkout
+      - run:
+          name: Merge release branch back to develop
+          command: |
+            source "$BASH_ENV"
+            git fetch origin
+            git checkout develop
+            git merge --no-ff release/$RELEASE_VERSION -m "chore: merge release/$RELEASE_VERSION back to develop"
+            git push origin develop
+
+  bump-develop-version:
+    executor: docker-executor
+    environment:
+      VERSION_FILE: app/backend/book-store/version.txt
+    steps:
+      - checkout
+      - run:
+          name: Install bump2version
+          command: pip install bump2version
+      - run:
+          name: Bump to next snapshot version
+          command: |
+            VERSION=$(<"$VERSION_FILE")
+            BASE_VERSION="${VERSION%-RC}"
+            IFS='.' read -r MAJOR MINOR PATCH <<< "${BASE_VERSION}"
+            NEXT_PATCH=$((PATCH + 1))
+            NEXT_VERSION="${MAJOR}.${MINOR}.${NEXT_PATCH}-SNAPSHOT"
+            bump2version --new-version "$NEXT_VERSION" --verbose
+            git add .
+            git commit -m "chore: bump version to $NEXT_VERSION"
+            git push origin develop
 
 
 
@@ -126,17 +198,17 @@ workflows:
             branches:
               only:
                 - /^release\/.*/
-#      - merge-back-to-develop:
-#          requires:
-#            - start-release
-#          filters:
-#            branches:
-#              only:
-#                - /^release\/.*/
-#      - ??? (升级develop branch里的version):
-#          requires:
-#            - merge-back-to-develop
-#          filters:
-#            branches:
-#              only:
-#                - /^release\/.*/
+      - merge-back-to-develop:
+          requires:
+            - start-release
+          filters:
+            branches:
+              only:
+                - /^release\/.*/
+      - bump-develop-version:
+          requires:
+            - merge-back-to-develop
+          filters:
+            branches:
+              only:
+                - /^release\/.*/
