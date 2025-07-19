@@ -86,6 +86,49 @@ jobs:
           name: Manual approval before starting release
           command: echo "Manual approval to start release required"
 
+  start-release:
+    executor: docker-executor
+    environment:
+      VERSION_FILE: app/backend/book-store/version.txt
+    steps:
+      - checkout
+
+      - run:
+          name: Install bump2version
+          command: |
+            pip install bump2version
+
+      - run:
+          name: Get release version (strip -SNAPSHOT)
+          command: |
+            VERSION=$(<"$VERSION_FILE")
+            RELEASE_VERSION="${VERSION%-SNAPSHOT}"
+            echo "export VERSION=$VERSION" >> "$BASH_ENV"
+            echo "export RELEASE_VERSION=$RELEASE_VERSION" >> "$BASH_ENV"
+
+      - run:
+          name: Configure Git user and remote
+          command: |
+            source "$BASH_ENV"
+            git config user.email "ci@example.com"
+            git config user.name "CircleCI"
+            git remote set-url origin https://${GIT_AUTH_TOKEN}@github.com/emilyzeng1977/book-store.git
+
+      - run:
+          name: Checkout release branch from develop
+          command: |
+            source "$BASH_ENV"
+            git fetch origin
+            git checkout -b release/$RELEASE_VERSION origin/develop
+
+      - run:
+          name: Bump version and push release branch
+          command: |
+            source "$BASH_ENV"
+            bump2version --new-version ${RELEASE_VERSION}-RC --verbose
+            git add .
+            git commit -m "chore: bump version to ${RELEASE_VERSION}-RC"
+            git push origin release/$RELEASE_VERSION
 
 workflows:
   version: 2
@@ -116,6 +159,13 @@ workflows:
           type: approval
           requires:
             - build
+          filters:
+            branches:
+              only:
+                - /^release\/.*/
+      - start-release:
+          requires:
+            - approve-to-start-release
           filters:
             branches:
               only:
