@@ -110,7 +110,7 @@ jobs:
           name: Bump version on main to official release
           command: |
             source "$BASH_ENV"
-            bump2version --new-version "$RELEASE_VERSION" --verbose start-release patch
+            bump2version --new-version "$RELEASE_VERSION" --verbose patch
             git add .
             git commit -m "chore: set version to $RELEASE_VERSION"
             git push origin main
