@@ -140,7 +140,7 @@ jobs:
           command: |
             git fetch origin
             git checkout develop
-            git merge origin/main -m "chore: merge main back to develop"
+            git merge -X theirs origin/main -m "chore: merge main back to develop"
             git push origin develop
 
   bump-develop-version:
