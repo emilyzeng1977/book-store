@@ -112,8 +112,12 @@ jobs:
             source "$BASH_ENV"
             bump2version --new-version "$RELEASE_VERSION" --verbose patch
             git add .
-            git commit -m "chore: set version to $RELEASE_VERSION"
-            git push origin main
+            if ! git diff --cached --quiet; then
+              git commit -m "chore: set version to $RELEASE_VERSION"
+              git push origin main
+            else
+              echo "No changes to commit."
+            fi
 #      - run:
 #          name: Tag the official release version
 #          command: |
