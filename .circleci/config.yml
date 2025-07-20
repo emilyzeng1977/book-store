@@ -177,7 +177,7 @@ jobs:
             # 组装新版本号
             NEXT_DEV_VERSION="${MAJOR}.${NEXT_MINOR}.${NEXT_PATCH}-SNAPSHOT"
             
-            echo "Next develop version: NEXT_DEV_VERSION"
+            echo "Next develop version: ${NEXT_DEV_VERSION}"
             bump2version --new-version ${NEXT_DEV_VERSION} --verbose patch
             git add .
 
