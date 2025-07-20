@@ -155,6 +155,13 @@ jobs:
           name: Install bump2version
           command: pip install bump2version
       - run:
+          name: Configure Git
+          command: |
+            source "$BASH_ENV"
+            git config user.email "ci@example.com"
+            git config user.name "CircleCI"
+            git remote set-url origin https://${GIT_AUTH_TOKEN}@github.com/emilyzeng1977/book-store.git
+      - run:
           name: Checkout develop branch
           command: |
             git fetch origin
