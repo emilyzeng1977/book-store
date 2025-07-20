@@ -111,12 +111,9 @@ jobs:
           command: |
             source "$BASH_ENV"
             bump2version --new-version "$RELEASE_VERSION" --verbose patch
-            if ! git diff --cached --quiet; then
-              git commit -m "chore: set version to $RELEASE_VERSION"
-              git push origin main
-            else
-              echo "No changes to commit."
-            fi
+            git add .
+            git commit -m "chore: set version to $RELEASE_VERSION"
+            git push origin main
 #      - run:
 #          name: Tag the official release version
 #          command: |
@@ -168,7 +165,7 @@ jobs:
             echo "$RELEASE_VERSION" | IFS='.' read -r MAJOR MINOR PATCH
             NEXT_PATCH=$((PATCH + 1))
             NEXT_VERSION="${MAJOR}.${MINOR}.${NEXT_PATCH}-SNAPSHOT"
-            bump2version --current-version "$VERSION" --new-version "$NEXT_VERSION" --verbose
+            bump2version --current-version "$VERSION" --new-version "$NEXT_VERSION" --verbose patch
             git add .
             git commit -m "chore: bump version to $NEXT_VERSION"
             git push origin develop
