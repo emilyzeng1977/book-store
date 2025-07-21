@@ -45,7 +45,7 @@ jobs:
             RC_VERSION=${RELEASE_VERSION}-RC
             echo "export CURRENT_DEV_VERSION=${CURRENT_DEV_VERSION}" >> "$BASH_ENV"
             echo "export RELEASE_VERSION=${RELEASE_VERSION}" >> "$BASH_ENV"
-            echo "export RC_VERSION={RC_VERSION}" >> "$BASH_ENV"
+            echo "export RC_VERSION=${RC_VERSION}" >> "$BASH_ENV"
 
       - run:
           name: Configure Git user and remote
@@ -60,7 +60,7 @@ jobs:
           command: |
             source "$BASH_ENV"
             git fetch origin
-            git checkout -b release/${RC_VERSION} origin/develop
+            git checkout -b release/${RELEASE_VERSION} origin/develop
 
       - run:
           name: Bump version and push release branch
@@ -69,7 +69,7 @@ jobs:
             bump2version --new-version ${RC_VERSION} --verbose patch
             git add .
             git commit -m "chore: bump version to ${RC_VERSION}"
-            git push origin release/$RC_VERSION
+            git push origin release/${RELEASE_VERSION}
 
   approve-to-start-release:
     type: approval
@@ -202,6 +202,8 @@ workflows:
             - approve-to-push-image
       - approve-to-create-release-branch:
           type: approval
+          requires:
+            - build
           filters:
             branches:
               only:
