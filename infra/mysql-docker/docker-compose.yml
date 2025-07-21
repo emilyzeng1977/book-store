@@ -6,7 +6,7 @@ services:
     container_name: mysql-book-store
     environment:
       MYSQL_ROOT_PASSWORD: 123456
-      MYSQL_DATABASE: book-store
+      MYSQL_DATABASE: bookstore
       MYSQL_USER: admin
       MYSQL_PASSWORD: 123456
     ports:
