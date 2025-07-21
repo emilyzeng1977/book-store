@@ -45,7 +45,7 @@ jobs:
             RC_VERSION=${RELEASE_VERSION}-RC
             echo "export CURRENT_DEV_VERSION=${CURRENT_DEV_VERSION}" >> "$BASH_ENV"
             echo "export RELEASE_VERSION=${RELEASE_VERSION}" >> "$BASH_ENV"
-            echo "export RC_VERSION={RC_VERSION}" >> "$BASH_ENV"
+            echo "export RC_VERSION=${RC_VERSION}" >> "$BASH_ENV"
 
       - run:
           name: Configure Git user and remote
