@@ -1,0 +1,25 @@
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    type VARCHAR(50) DEFAULT 'customer',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS books (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(200) NOT NULL,
+    author VARCHAR(100),
+    price DECIMAL(10, 2) NOT NULL,
+    stock INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+CREATE TABLE IF NOT EXISTS orders (
+    id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES users(id),
+    book_id INT REFERENCES books(id),
+    quantity INT NOT NULL,
+    order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
