@@ -69,7 +69,7 @@ jobs:
             bump2version --new-version ${RC_VERSION} --verbose patch
             git add .
             git commit -m "chore: bump version to ${RC_VERSION}"
-            git push origin release/RELEASE_VERSION
+            git push origin release/${RELEASE_VERSION}
 
   approve-to-start-release:
     type: approval
