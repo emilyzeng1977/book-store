@@ -81,8 +81,12 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Install bump2version
-          command: pip install bump2version
+          name: Install dependencies (bump2version + Python + OpenCommit)
+          command: |
+            pip install bump2version
+            curl -fsSL https://deb.nodesource.com/setup_20.x | sudo bash -
+            sudo apt-get install -y nodejs git
+            sudo npm install -g opencommit
       - run:
           name: Load and prepare version info
           command: |
