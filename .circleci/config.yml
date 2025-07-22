@@ -107,10 +107,6 @@ jobs:
             source "$BASH_ENV"
             git fetch origin
             git checkout main
-            PRE_RELEASE_VERSION=$(<"$VERSION_FILE")
-            echo "$PRE_RELEASE_VERSION"
-            echo "$RELEASE_VERSION"
-            echo "export PRE_RELEASE_VERSION=${PRE_RELEASE_VERSION}" >> "$BASH_ENV"
             git merge -X theirs --no-ff release/$RELEASE_VERSION -m "chore: release $RELEASE_VERSION"
       - run:
           name: Bump version on main to official release
@@ -130,6 +126,8 @@ jobs:
             source "$BASH_ENV"
             export OPENAI_API_KEY=${OPENAI_API_KEY}
             export OPENCOMMIT_MODEL="gpt-4.1-nano-2025-04-14"
+            PRE_RELEASE_VERSION=$(echo "$RELEASE_VERSION" | awk -F. '{printf "%d.%d.0", $1, $2-1}')
+            echo "PRE_RELEASE_VERSION: ${PRE_RELEASE_VERSION}"            
             RELEASE_NOTES=$(npx opencommit changelog --no-emojis --since "v${PRE_RELEASE_VERSION}")
             echo "Release Notes:"
             echo "$RELEASE_NOTES"
