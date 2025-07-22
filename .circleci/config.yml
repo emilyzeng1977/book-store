@@ -129,7 +129,7 @@ jobs:
           command: |
             export OPENAI_API_KEY=${OPENAI_API_KEY}
             export OPENCOMMIT_MODEL="gpt-4.1-nano-2025-04-14"
-            RELEASE_NOTES=$(npx oc changelog --no-emojis --since "release/${PRE_RELEASE_VERSION}"")
+            RELEASE_NOTES=$(npx oc changelog --no-emojis --since "release/${PRE_RELEASE_VERSION}")
             echo "Release Notes:"
             echo "$RELEASE_NOTES"
 
