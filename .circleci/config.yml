@@ -121,11 +121,18 @@ jobs:
               echo "No changes to commit."
             fi
       - run:
-          name: Tag the official release version
+          name: Generate release notes and tag the release
           command: |
-            source "$BASH_ENV"
-            git tag "v${RELEASE_VERSION}"
+            export OPENAI_API_KEY=${OPENAI_API_KEY}
+            export OPENCOMMIT_MODEL="gpt-4.1-nano-2025-04-14"
+
+            RELEASE_NOTES=$(oc changelog --no-emojis --since "release/${RELEASE_VERSION}")
+            echo "Release Notes:"
+            echo "$RELEASE_NOTES"
+
+            git tag -a "v${RELEASE_VERSION}" -m "$RELEASE_NOTES"
             git push origin "v${RELEASE_VERSION}"
+            
 
   merge-back-to-develop:
     executor: docker-executor
