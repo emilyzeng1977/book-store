@@ -108,6 +108,8 @@ jobs:
             git fetch origin
             git checkout main
             PRE_RELEASE_VERSION=$(<"$VERSION_FILE")
+            echo "$PRE_RELEASE_VERSION"
+            echo "$RELEASE_VERSION"
             echo "export PRE_RELEASE_VERSION=${PRE_RELEASE_VERSION}" >> "$BASH_ENV"
             git merge -X theirs --no-ff release/$RELEASE_VERSION -m "chore: release $RELEASE_VERSION"
       - run:
