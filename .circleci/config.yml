@@ -22,6 +22,7 @@ jobs:
     environment:
       VERSION_FILE: app/backend/book-store/version.txt
       DOCKERFILE_PATH: app/backend/book-store
+      PROJECT_NAME: book-store
     steps:
       - checkout
       - setup_remote_docker  # 启用 Docker 引擎
@@ -34,17 +35,16 @@ jobs:
           command: |
             VERSION=$(cat "$VERSION_FILE")
             echo "export VERSION=${VERSION}" >> "$BASH_ENV"
+            echo "IMAGE_NAME=${DOCKERHUB_USERNAME}/${PROJECT_NAME}" >> "$BASH_ENV"
       - run:
           name: Build Docker image
           command: |
             source "$BASH_ENV"
-            IMAGE_NAME="$DOCKERHUB_USERNAME/book_store"
             docker build -t $IMAGE_NAME:$VERSION -t $IMAGE_NAME:latest "$DOCKERFILE_PATH"
       - run:
           name: Push Docker image
           command: |
             source "$BASH_ENV"
-            IMAGE_NAME="$DOCKERHUB_USERNAME/book_store"
             docker push $IMAGE_NAME:$VERSION
             docker push $IMAGE_NAME:latest
 
