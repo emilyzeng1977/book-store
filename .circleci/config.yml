@@ -1,9 +1,29 @@
 version: 2.1
 
+parameters:
+  version_file:
+    type: string
+    default: app/backend/book-store/version.txt
+
 executors:
   docker-executor:
     docker:
       - image: cimg/python:3.12
+
+commands:
+  setup-git:
+    steps:
+      - run:
+          name: Configure Git
+          command: |
+            git config user.email "ci@example.com"
+            git config user.name "CircleCI"
+            git remote set-url origin https://${GIT_AUTH_TOKEN}@github.com/emilyzeng1977/book-store.git
+  install-bump2version:
+    steps:
+      - run:
+          name: Install bump2version
+          command: pip install bump2version
 
 jobs:
   build:
@@ -57,10 +77,7 @@ jobs:
       VERSION_FILE: app/backend/book-store/version.txt
     steps:
       - checkout
-      - run:
-          name: Install bump2version
-          command: |
-            pip install bump2version
+      - install-bump2version
       - run:
           name: Get release version (strip -SNAPSHOT)
           command: |
@@ -70,15 +87,7 @@ jobs:
             echo "export CURRENT_DEV_VERSION=${CURRENT_DEV_VERSION}" >> "$BASH_ENV"
             echo "export RELEASE_VERSION=${RELEASE_VERSION}" >> "$BASH_ENV"
             echo "export RC_VERSION=${RC_VERSION}" >> "$BASH_ENV"
-
-      - run:
-          name: Configure Git user and remote
-          command: |
-            source "$BASH_ENV"
-            git config user.email "ci@example.com"
-            git config user.name "CircleCI"
-            git remote set-url origin https://${GIT_AUTH_TOKEN}@github.com/emilyzeng1977/book-store.git
-
+      - setup-git
       - run:
           name: Checkout release branch from develop
           command: |
@@ -104,10 +113,10 @@ jobs:
       VERSION_FILE: app/backend/book-store/version.txt
     steps:
       - checkout
+      - install-bump2version
       - run:
-          name: Install dependencies (bump2version + Python + OpenCommit)
+          name: Install OpenCommit
           command: |
-            pip install bump2version
             curl -fsSL https://deb.nodesource.com/setup_20.x | sudo bash -
             sudo apt-get install -y nodejs git
             sudo npm install -g opencommit
@@ -118,13 +127,7 @@ jobs:
             RELEASE_VERSION="${RC_VERSION%-RC}"
             echo "export RC_VERSION=${RC_VERSION}" >> "$BASH_ENV"
             echo "export RELEASE_VERSION=${RELEASE_VERSION}" >> "$BASH_ENV"
-      - run:
-          name: Configure Git
-          command: |
-            source "$BASH_ENV"
-            git config user.email "ci@example.com"
-            git config user.name "CircleCI"
-            git remote set-url origin https://${GIT_AUTH_TOKEN}@github.com/emilyzeng1977/book-store.git
+      - setup-git
       - run:
           name: Merge release branch into main
           command: |
@@ -166,12 +169,7 @@ jobs:
       VERSION_FILE: app/backend/book-store/version.txt
     steps:
       - checkout
-      - run:
-          name: Configure Git
-          command: |
-            git config user.email "ci@example.com"
-            git config user.name "CircleCI"
-            git remote set-url origin https://${GIT_AUTH_TOKEN}@github.com/emilyzeng1977/book-store.git
+      - setup-git
       - run:
           name: Merge main branch back into develop
           command: |
@@ -186,15 +184,8 @@ jobs:
       VERSION_FILE: app/backend/book-store/version.txt
     steps:
       - checkout
-      - run:
-          name: Install bump2version
-          command: pip install bump2version
-      - run:
-          name: Configure Git
-          command: |
-            git config user.email "ci@example.com"
-            git config user.name "CircleCI"
-            git remote set-url origin https://${GIT_AUTH_TOKEN}@github.com/emilyzeng1977/book-store.git
+      - install-bump2version
+      - setup-git
       - run:
           name: Checkout develop branch
           command: |
