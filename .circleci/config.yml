@@ -1,14 +1,15 @@
 version: 2.1
 
-parameters:
-  version_file:
-    type: string
-    default: app/backend/book-store/version.txt
-
 executors:
   docker-executor:
+    parameters:
+      version_file:
+        type: string
+        default: app/backend/book-store/version.txt
     docker:
       - image: cimg/python:3.12
+    environment:
+      VERSION_FILE: <<parameters.version_file>>
 
 commands:
   setup-git:
@@ -40,7 +41,6 @@ jobs:
   push-image:
     executor: docker-executor
     environment:
-      VERSION_FILE: app/backend/book-store/version.txt
       DOCKERFILE_PATH: app/backend/book-store
       PROJECT_NAME: book-store
     steps:
@@ -73,15 +73,13 @@ jobs:
 
   create-release-branch:
     executor: docker-executor
-    environment:
-      VERSION_FILE: app/backend/book-store/version.txt
     steps:
       - checkout
       - install-bump2version
       - run:
           name: Get release version (strip -SNAPSHOT)
           command: |
-            CURRENT_DEV_VERSION=$(<"$VERSION_FILE")
+            CURRENT_DEV_VERSION=$(cat "$VERSION_FILE")
             RELEASE_VERSION="${CURRENT_DEV_VERSION%-SNAPSHOT}"
             RC_VERSION=${RELEASE_VERSION}-RC
             echo "export CURRENT_DEV_VERSION=${CURRENT_DEV_VERSION}" >> "$BASH_ENV"
@@ -109,8 +107,6 @@ jobs:
 
   start-release:
     executor: docker-executor
-    environment:
-      VERSION_FILE: app/backend/book-store/version.txt
     steps:
       - checkout
       - install-bump2version
@@ -123,7 +119,7 @@ jobs:
       - run:
           name: Load and prepare version info
           command: |
-            RC_VERSION=$(<"$VERSION_FILE")
+            RC_VERSION=$(cat "$VERSION_FILE")
             RELEASE_VERSION="${RC_VERSION%-RC}"
             echo "export RC_VERSION=${RC_VERSION}" >> "$BASH_ENV"
             echo "export RELEASE_VERSION=${RELEASE_VERSION}" >> "$BASH_ENV"
@@ -165,8 +161,6 @@ jobs:
 
   merge-back-to-develop:
     executor: docker-executor
-    environment:
-      VERSION_FILE: app/backend/book-store/version.txt
     steps:
       - checkout
       - setup-git
@@ -180,8 +174,6 @@ jobs:
 
   bump-develop-version:
     executor: docker-executor
-    environment:
-      VERSION_FILE: app/backend/book-store/version.txt
     steps:
       - checkout
       - install-bump2version
@@ -194,7 +186,7 @@ jobs:
       - run:
           name: Bump to next SNAPSHOT version
           command: |
-            RELEASE_VERSION=$(<"$VERSION_FILE")            
+            RELEASE_VERSION=$(cat "$VERSION_FILE")          
             # 解析 major, minor, patch
             IFS='.' read -r MAJOR MINOR PATCH \<<< "$RELEASE_VERSION"
             
