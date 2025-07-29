@@ -5,9 +5,9 @@ locals {
 # ---------------------------
 # 创建 CloudWatch Log Group，用于存储 ECS 任务的容器日志
 # ---------------------------
-resource "aws_cloudwatch_log_group" "book_store" {
+data "aws_cloudwatch_log_group" "book_store" {
   name              = "/ecs/${local.book_store_container_name}"
-  retention_in_days = 1   # 日志保留天数，根据需求调整
+  # retention_in_days = 1   # 日志保留天数，根据需求调整
 }
 
 # ---------------------------
@@ -135,7 +135,7 @@ resource "aws_ecs_task_definition" "book_store" {
   execution_role_arn       = aws_iam_role.book_store_execution_role.arn
   task_role_arn            = aws_iam_role.book_store_task_role.arn
 
-  depends_on = [aws_cloudwatch_log_group.book_store]
+  depends_on = [data.aws_cloudwatch_log_group.book_store]
 
   container_definitions = jsonencode([
     {
@@ -165,7 +165,7 @@ resource "aws_ecs_task_definition" "book_store" {
       logConfiguration = {
         logDriver = "awslogs"
         options = {
-          "awslogs-group"         = aws_cloudwatch_log_group.book_store.name
+          "awslogs-group"         = data.aws_cloudwatch_log_group.book_store.name
           "awslogs-region"        = "ap-southeast-2"
           "awslogs-stream-prefix" = "${local.book_store_container_name}"
         }
@@ -184,7 +184,7 @@ resource "aws_ecs_task_definition" "book_store" {
       logConfiguration = {
         logDriver = "awslogs"
         options = {
-          "awslogs-group"         = aws_cloudwatch_log_group.book_store.name
+          "awslogs-group"         = data.aws_cloudwatch_log_group.book_store.name
           "awslogs-region"        = "ap-southeast-2"
           "awslogs-stream-prefix" = "xray"
         }
