@@ -32,3 +32,6 @@ CORS_ORIGINS = get_env_variable('CORS_ORIGINS', 'https://dev.be-devops.shop')
 
 PRICE_SERVER = get_env_variable('PRICE_SERVER', 'host.docker.internal')
 PRICE_PORT = get_env_variable('PRICE_PORT', '5000')
+
+# Enable AWS XRAY
+AWS_XRAY_ENABLE = get_env_variable('AWS_XRAY_ENABLE', 'false').lower() == 'true'

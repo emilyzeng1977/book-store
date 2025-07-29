@@ -154,6 +154,10 @@ resource "aws_ecs_task_definition" "book_store" {
           value = "book_store_price.local"
         },
         {
+          name  = "AWS_XRAY_ENABLE"
+          value = "true"
+        },
+        {
           name  = "AWS_XRAY_DAEMON_ADDRESS"
           value = "127.0.0.1:2000"
         }
