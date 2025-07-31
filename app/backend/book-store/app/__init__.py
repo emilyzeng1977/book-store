@@ -121,7 +121,7 @@ def log_request_response_trace_id(response):
             "remote_addr": request.remote_addr,
             "method": request.method,
             "url": request.url,
-            "headers": dict(request.headers),
+            "request_headers": dict(request.headers),
             "query_params": request.args.to_dict(),
             "request_body": get_request_body(),
             "status": response.status_code,
