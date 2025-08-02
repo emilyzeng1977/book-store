@@ -117,14 +117,13 @@ def log_request_response_trace_id(response):
         # 请在这里写request和response日志
         log_data = {
             "timestamp": datetime.utcnow().isoformat() + "Z",
-            "trace_id": trace_id,
             "remote_addr": request.remote_addr,
             "method": request.method,
             "url": request.url,
             "request_headers": dict(request.headers),
             "query_params": request.args.to_dict(),
             "request_body": get_request_body(),
-            "status": response.status_code,
+            "http.statusCode": response.status_code,  # 使用标准字段名便于 New Relic 识别
             "response_headers": dict(response.headers),
             "response_body": get_response_body(response),
             "duration": duration
