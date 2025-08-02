@@ -35,6 +35,25 @@ resource "aws_iam_role_policy_attachment" "book_store_execution_policy_attach" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
+resource "aws_iam_policy" "book_store_ssm_policy" {
+  name        = "book-store-ssm-read"
+  description = "Allow ECS Task to read New Relic license key from SSM"
+  policy      = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect   = "Allow",
+        Action   = ["ssm:GetParameters"],
+        Resource = "arn:aws:ssm:ap-southeast-2:961341537777:parameter/dev/book-store/newrelic/license_key"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "book_store_ssm_policy_attach" {
+  role       = aws_iam_role.book_store_execution_role.name
+  policy_arn = aws_iam_policy.book_store_ssm_policy.arn
+}
 # ---------------------------
 # ECS 容器内部执行 Cognito 和 X-Ray
 # ---------------------------
@@ -148,6 +167,14 @@ resource "aws_ecs_task_definition" "book_store" {
         }
       ]
       essential = true
+
+      secrets = [
+        {
+          name      = "NEW_RELIC_LICENSE_KEY"  # 注入到容器中的环境变量名
+          valueFrom = "arn:aws:ssm:ap-southeast-2:961341537777:parameter/dev/book-store/newrelic/license_key"
+        }
+      ]
+
       environment = [
         {
           name  = "PRICE_SERVER"
@@ -155,7 +182,7 @@ resource "aws_ecs_task_definition" "book_store" {
         },
         {
           name  = "AWS_XRAY_ENABLE"
-          value = "true"
+          value = "false"
         },
         {
           name  = "AWS_XRAY_DAEMON_ADDRESS"
