@@ -9,3 +9,7 @@ venv.bak/
 # Terraform cache and provider plugins
 **/.terraform/
 **/.terraform.lock.hcl
+**/.terraform.tfstate
+**/.terraform.tfstate.backup
+
+**/temp
