@@ -18,3 +18,4 @@ venv.bak/
 **/terraform.tfstate.backup
 
 **/temp
+**/build
