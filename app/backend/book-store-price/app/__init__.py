@@ -5,12 +5,17 @@ from flask import Flask
 from aws_xray_sdk.core import xray_recorder, patch_all
 from aws_xray_sdk.ext.flask.middleware import XRayMiddleware
 
+from .config import (
+    AWS_XRAY_ENABLE
+)
+
 # 创建 Flask app 实例
 app = Flask(__name__)
 
 # ✅ 配置 X-Ray 服务名
-xray_recorder.configure(service='book-store-price')
-XRayMiddleware(app, xray_recorder)
+if AWS_XRAY_ENABLE:
+    xray_recorder.configure(service='book-store-price')
+    XRayMiddleware(app, xray_recorder)
 
 # 日志配置
 logging.basicConfig(

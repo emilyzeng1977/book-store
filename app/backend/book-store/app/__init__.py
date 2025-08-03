@@ -6,8 +6,6 @@ from flask_cors import CORS
 from flasgger import Swagger
 from pymongo import MongoClient
 
-from pythonjsonlogger import jsonlogger  # pip install python-json-logger
-
 import time
 import json
 from datetime import datetime
