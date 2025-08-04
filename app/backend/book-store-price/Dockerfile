@@ -13,8 +13,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 # 复制当前目录所有文件到容器中的工作目录
 COPY . .
 
+# 设置环境变量指向配置文件
+ENV NEW_RELIC_CONFIG_FILE=newrelic.ini
+
 # 暴露端口 5000
 EXPOSE 5000
 
-# 设置容器启动时执行的命令
-CMD ["python", "main.py"]
+# 设置容器启动命令，使用 newrelic-admin 启动
+CMD ["newrelic-admin", "run-program", "python", "main.py"]
