@@ -123,7 +123,7 @@ def log_request_response_trace_id(response):
             "request_body": get_request_body(),
             "http.statusCode": response.status_code,  # 使用标准字段名便于 New Relic 识别
             "response_headers": dict(response.headers),
-            "response_body": get_response_body(response),
+            # "response_body": get_response_body(response),
             "duration": duration
         }
         logger.info(json.dumps(log_data))
