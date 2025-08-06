@@ -1,11 +1,13 @@
 from flask import jsonify, request
 from . import app
 from .prices_data import prices
+import newrelic.agent
 
 @app.route('/price/<string:book_id>', methods=['GET'])
 def get_price(book_id):
     # 日志记录请求信息
     app.logger.info("Request headers: %s", dict(request.headers))
+    newrelic.agent.accept_distributed_trace_headers('HTTP', request.headers)
 
     # 获取追踪头信息（OpenTelemetry 和 Zipkin）
     traceparent = request.headers.get("traceparent")

@@ -4,13 +4,16 @@ import requests
 import logging
 from . import app
 from .config import PRICE_SERVER, PRICE_PORT
+import newrelic.agent
 
 @app.route('/call-price', methods=['GET'])
 def call_price():
     book_id = request.args.get('book_id')
     price_service_url = f"http://{PRICE_SERVER}:{PRICE_PORT}/price"
     try:
-        response = requests.get(price_service_url, params={'book_id': book_id}, timeout=2)
+        headers = dict(request.headers)
+        newrelic.agent.insert_distributed_trace_headers(headers)
+        response = requests.get(price_service_url, headers=headers, params={'book_id': book_id}, timeout=2)
         response.raise_for_status()
         return jsonify({
             "message": "Call price Service",
