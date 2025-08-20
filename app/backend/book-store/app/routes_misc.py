@@ -23,6 +23,9 @@ def call_price():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/healthz', methods=['GET'])
-def health_check():
+def healthz_check():
     return jsonify({"status": "ok", "message": "Hello, bookStore!"}), 200
 
+@app.route('/health', methods=['GET'])
+def health_check():
+    return jsonify({"status": "ok", "message": "Hello, bookStore!"}), 200
