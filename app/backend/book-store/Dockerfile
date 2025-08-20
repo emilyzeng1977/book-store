@@ -17,7 +17,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 ENV NEW_RELIC_CONFIG_FILE=newrelic.ini
 
 # 暴露端口
-EXPOSE 5000
+EXPOSE 8000
 
 # 设置容器启动命令，使用 newrelic-admin 启动
 CMD ["newrelic-admin", "run-program", "python", "main.py"]
