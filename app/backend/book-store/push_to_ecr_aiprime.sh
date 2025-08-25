@@ -2,7 +2,7 @@
 
 REGION="ap-east-1"
 ACCOUNT_ID="377977679134"
-REPO="tom-demo-dev"
+REPO="tom-demo-ecr-dev"
 TAG="latest"
 
 IMAGE_URI="${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/${REPO}:${TAG}"
