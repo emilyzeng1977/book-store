@@ -17,4 +17,4 @@ COPY . .
 EXPOSE 8000
 
 # 设置容器启动时执行的命令
-CMD ["python", "main.py"]
+CMD ["ddtrace-run", "python", "main.py"]
