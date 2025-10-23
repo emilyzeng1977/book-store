@@ -58,8 +58,8 @@ jobs:
   push-image-java:
     executor: docker-executor
     environment:
-      VERSION_FILE: app/backend/bookstore-api/version.txt
-      DOCKERFILE_PATH: app/backend/bookstore-api
+      VERSION_FILE: app/backend-java/bookstore-api/version.txt
+      DOCKERFILE_PATH: app/backend-java/bookstore-api
       PROJECT_NAME: bookstore-api
     steps:
       - checkout
