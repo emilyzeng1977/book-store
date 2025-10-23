@@ -63,6 +63,8 @@ jobs:
       PROJECT_NAME: bookstore-api
     steps:
       - checkout
+      - attach_workspace:
+          at: app/backend-java/bookstore-api
       - setup_remote_docker  # 启用 Docker 引擎
       - run:
           name: Docker login
