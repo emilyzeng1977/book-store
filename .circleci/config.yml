@@ -7,12 +7,19 @@ executors:
 
 jobs:
   build:
-    executor: docker-executor
+    docker:
+      - image: cimg/openjdk:17.0
     steps:
       - checkout
       - run:
-          name: Dummy build step
-          command: echo "Build complete"
+          name: Build with Maven
+          command: |
+            cd app/backend-java/bookstore-api
+            mvn clean package -DskipTests -B
+      - persist_to_workspace:
+          root: app/backend-java/bookstore-api
+          paths:
+            - target/*.jar
 
   approve-to-push-image:
     type: approval
@@ -51,9 +58,9 @@ jobs:
   push-image-java:
     executor: docker-executor
     environment:
-      VERSION_FILE: app/backend/book-store/version.txt
-      DOCKERFILE_PATH: app/backend/book-store
-      PROJECT_NAME: book-store
+      VERSION_FILE: app/backend/bookstore-api/version.txt
+      DOCKERFILE_PATH: app/backend/bookstore-api
+      PROJECT_NAME: bookstore-api
     steps:
       - checkout
       - setup_remote_docker  # 启用 Docker 引擎
