@@ -77,10 +77,15 @@ jobs:
             echo "export VERSION=${VERSION}" >> "$BASH_ENV"
             echo "IMAGE_NAME=${DOCKERHUB_USERNAME}/${PROJECT_NAME}" >> "$BASH_ENV"
       - run:
-          name: Build Docker image
+          name: Build Docker image (single arch)
           command: |
             source "$BASH_ENV"
-            docker build -t $IMAGE_NAME:$VERSION -t $IMAGE_NAME:latest "$DOCKERFILE_PATH"
+            docker buildx build \
+              --platform linux/amd64 \
+              --load \
+              -t $IMAGE_NAME:$VERSION \
+              -t $IMAGE_NAME:latest \
+              "$DOCKERFILE_PATH"
       - run:
           name: Push Docker image
           command: |
