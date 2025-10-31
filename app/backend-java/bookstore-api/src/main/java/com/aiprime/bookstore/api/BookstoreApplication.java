@@ -9,6 +9,10 @@ import org.springframework.web.bind.annotation.RestController;
 @SpringBootApplication
 @RestController
 public class BookstoreApplication {
+	@GetMapping("/")
+	public String index() {
+		return "Welcome to Bookstore API!";
+	}
 
 	public static void main(String[] args) {
 		SpringApplication.run(BookstoreApplication.class, args);
