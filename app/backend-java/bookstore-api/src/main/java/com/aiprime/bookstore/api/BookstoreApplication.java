@@ -14,6 +14,11 @@ public class BookstoreApplication {
 		return "Welcome to Bookstore API!";
 	}
 
+	@GetMapping("/health")
+	public String health() {
+		return "Health Check OK";
+	}
+
 	public static void main(String[] args) {
 		SpringApplication.run(BookstoreApplication.class, args);
 	}
