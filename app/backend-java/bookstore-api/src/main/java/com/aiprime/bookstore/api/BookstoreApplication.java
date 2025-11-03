@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class BookstoreApplication {
 	@GetMapping("/")
 	public String index() {
-		return "Welcome to Bookstore API!";
+		return "Welcome to Bookstore API!!!";
 	}
 
 	@GetMapping("/health")
