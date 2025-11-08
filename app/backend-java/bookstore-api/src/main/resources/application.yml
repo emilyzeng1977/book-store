@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: bookstore-api
+
+server:
+  port: 8000
+  forward-headers-strategy: framework
+
+logging:
+  level:
+    http.logger.full: DEBUG

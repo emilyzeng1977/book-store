@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-@SpringBootApplication
+@SpringBootApplication(exclude = org.zalando.logbook.autoconfigure.LogbookAutoConfiguration.class)
 @RestController
 public class BookstoreApplication {
 	@GetMapping("/")
