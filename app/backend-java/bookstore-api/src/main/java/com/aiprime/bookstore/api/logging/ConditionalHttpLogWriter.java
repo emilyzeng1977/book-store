@@ -16,8 +16,8 @@ public class ConditionalHttpLogWriter implements HttpLogWriter {
 
     @Override
     public void write(Precorrelation precorrelation, String request) throws IOException {
-        // 不输出
-    }
+        // 记录请求（包含客户端 IP）
+        debugWriter.write(precorrelation, request);    }
 
     @Override
     public void write(Correlation correlation, String response) throws IOException {

@@ -9,11 +9,6 @@ import org.springframework.web.bind.annotation.RestController;
 @SpringBootApplication(exclude = org.zalando.logbook.autoconfigure.LogbookAutoConfiguration.class)
 @RestController
 public class BookstoreApplication {
-	@GetMapping("/")
-	public String index() {
-		return "Welcome to Bookstore API!!!";
-	}
-
 	@GetMapping("/health")
 	public String health() {
 		return "Health Check OK";
