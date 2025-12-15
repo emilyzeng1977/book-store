@@ -8,4 +8,7 @@ server:
 
 logging:
   level:
-    http.logger.full: DEBUG
+    http.logger.full: INFO
+    http.logger.error: ERROR
+  pattern:
+    console: "%msg%n"  # 关键：只输出消息内容，不添加时间戳等前缀

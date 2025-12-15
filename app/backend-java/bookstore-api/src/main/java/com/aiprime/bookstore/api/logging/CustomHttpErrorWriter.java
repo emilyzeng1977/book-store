@@ -4,8 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zalando.logbook.Correlation;
 import org.zalando.logbook.HttpLogWriter;
-import org.zalando.logbook.HttpRequest;
-import org.zalando.logbook.HttpResponse;
 import org.zalando.logbook.Precorrelation;
 
 public class CustomHttpErrorWriter implements HttpLogWriter {
@@ -13,10 +11,6 @@ public class CustomHttpErrorWriter implements HttpLogWriter {
 
     public CustomHttpErrorWriter(String loggerName) {
         log = LoggerFactory.getLogger(loggerName);
-    }
-
-    public boolean isActive() {
-        return this.log.isErrorEnabled();
     }
 
     public void write(final Precorrelation precorrelation, final String request) {

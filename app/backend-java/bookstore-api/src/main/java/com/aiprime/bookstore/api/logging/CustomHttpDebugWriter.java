@@ -14,11 +14,6 @@ public class CustomHttpDebugWriter implements HttpLogWriter {
     }
 
     @Override
-    public boolean isActive() {
-        return this.log.isDebugEnabled();
-    }
-
-    @Override
     public void write(final Precorrelation precorrelation, final String request) {
         this.log.debug(request);
     }
