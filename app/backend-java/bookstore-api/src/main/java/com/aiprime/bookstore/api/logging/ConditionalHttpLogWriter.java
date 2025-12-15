@@ -60,7 +60,7 @@ public class ConditionalHttpLogWriter implements HttpLogWriter {
 
                 String traceId = CorrelationIdentifier.getTraceId();
                 if (!"0".equals(traceId)) {
-                    obj.put("traceId", traceId);
+                    obj.put("trace_id", traceId);
                 }
 
                 return objectMapper.writeValueAsString(obj);
