@@ -60,8 +60,6 @@ public class ConditionalHttpLogWriter implements HttpLogWriter {
 
                 String traceId = CorrelationIdentifier.getTraceId();
                 if (traceId != null && !traceId.isBlank()) {
-                    obj.put("trace_id", traceId);
-                    obj.put("traceId", traceId);
                     obj.put("dd.trace_id", traceId);
                 }
 
