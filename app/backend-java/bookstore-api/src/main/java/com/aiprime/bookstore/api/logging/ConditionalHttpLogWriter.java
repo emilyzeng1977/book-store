@@ -59,8 +59,9 @@ public class ConditionalHttpLogWriter implements HttpLogWriter {
                 ObjectNode obj = (ObjectNode) root;
 
                 String traceId = CorrelationIdentifier.getTraceId();
-                if (!"0".equals(traceId)) {
+                if (traceId != null && !traceId.isBlank()) {
                     obj.put("trace_id", traceId);
+                    obj.put("traceId", traceId);
                 }
 
                 return objectMapper.writeValueAsString(obj);
