@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Sydney Radius Map</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="top-bar">
+    Radius (meters): <input id="radiusInput" type="number" value="500" min="100" step="100">
+
+    <label class="csv-upload">
+        <span>Upload CSV:</span>
+        <input id="csvInput" type="file" accept=".csv,text/csv">
+    </label>
+
+    <button id="toggleAllBtn" type="button">Select all</button>
+</div>
+
+<div class="container">
+    <div class="left-panel">
+        <h3>Locations</h3>
+        <div id="locationList"></div>
+    </div>
+    <div id="map"></div>
+</div>
+
+<!-- 先加载你的 JS -->
+<script src="script.js"></script>
+
+<!-- Google Maps JS，去掉 callback -->
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBGnQtc8DjCwKpbuUaOhUQYBpliUKoXDoM&libraries=places" async></script>
+
+</body>
+</html>
