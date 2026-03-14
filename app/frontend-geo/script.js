@@ -54,6 +54,7 @@ function initMap() {
     setupRadiusEvent();
     setupToggleButtons();
     setupCsvUpload();
+    setupPanelResize();
 
     setOutput(`Ready. Locations loaded: ${locations.length}`);
     updateToggleAllButtonLabel();
@@ -388,4 +389,80 @@ function parseCsvLine(line){
 
     res.push(cur);
     return res;
+}
+
+function setupPanelResize(){
+    const leftPanel = document.getElementById('leftPanel');
+    const resizer = document.getElementById('panelResizer');
+    const container = document.querySelector('.container');
+    if(!leftPanel || !resizer || !container) return;
+
+    const MIN_W = 160;
+    const MAX_W = 520;
+
+    // Restore saved width
+    const saved = Number(localStorage.getItem('leftPanelWidth'));
+    if(Number.isFinite(saved) && saved >= MIN_W && saved <= MAX_W){
+        document.documentElement.style.setProperty('--left-panel-width', `${saved}px`);
+    }
+
+    let dragging = false;
+    let startX = 0;
+    let startW = 0;
+
+    function clamp(v){
+        return Math.max(MIN_W, Math.min(MAX_W, v));
+    }
+
+    function beginDrag(clientX){
+        dragging = true;
+        startX = clientX;
+        startW = leftPanel.getBoundingClientRect().width;
+        document.body.classList.add('resizing');
+    }
+
+    function onMove(clientX){
+        if(!dragging) return;
+        const dx = clientX - startX;
+        const next = clamp(Math.round(startW + dx));
+        document.documentElement.style.setProperty('--left-panel-width', `${next}px`);
+    }
+
+    function endDrag(){
+        if(!dragging) return;
+        dragging = false;
+        document.body.classList.remove('resizing');
+
+        // Persist
+        const finalW = Math.round(leftPanel.getBoundingClientRect().width);
+        localStorage.setItem('leftPanelWidth', String(finalW));
+
+        // Tell Google Map to recompute layout
+        if(map){
+            const center = map.getCenter();
+            google.maps.event.trigger(map, 'resize');
+            if(center) map.setCenter(center);
+        }
+    }
+
+    resizer.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        beginDrag(e.clientX);
+    });
+
+    window.addEventListener('mousemove', (e) => onMove(e.clientX));
+    window.addEventListener('mouseup', endDrag);
+
+    // Touch support
+    resizer.addEventListener('touchstart', (e) => {
+        if(!e.touches || e.touches.length === 0) return;
+        beginDrag(e.touches[0].clientX);
+    }, { passive: true });
+
+    window.addEventListener('touchmove', (e) => {
+        if(!e.touches || e.touches.length === 0) return;
+        onMove(e.touches[0].clientX);
+    }, { passive: true });
+
+    window.addEventListener('touchend', endDrag);
 }

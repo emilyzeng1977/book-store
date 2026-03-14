@@ -35,12 +35,32 @@ html, body {
 }
 
 .left-panel {
-    width: 200px;
-    flex: 0 0 200px;
+    width: var(--left-panel-width, 200px);
+    flex: 0 0 var(--left-panel-width, 200px);
     overflow-y: auto;
     padding: 10px;
     border-right: 1px solid #ccc;
     background-color: #fafafa;
+}
+
+.resizer {
+    width: 6px;
+    cursor: col-resize;
+    background: transparent;
+    flex: 0 0 6px;
+}
+
+.resizer:hover {
+    background: rgba(0,0,0,0.06);
+}
+
+.resizing {
+    cursor: col-resize;
+    user-select: none;
+}
+
+.resizing .resizer {
+    background: rgba(0,0,0,0.08);
 }
 
 #locationList label {
