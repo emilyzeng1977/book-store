@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <title>Sydney Radius Map</title>
     <link rel="stylesheet" href="style.css">
+    <script>
+        if(sessionStorage.getItem("loggedIn") !== "true"){
+            window.location.href = "login.html";
+        }
+    </script>
 </head>
 <body>
 
@@ -21,15 +26,15 @@
 <div class="container">
     <div class="left-panel">
         <h3>Locations</h3>
+
         <div id="locationList"></div>
     </div>
     <div id="map"></div>
 </div>
 
-<!-- 先加载你的 JS -->
-<script src="script.js"></script>
+<div class="output" id="outputBox">Ready.</div>
 
-<!-- Google Maps JS，去掉 callback -->
+<script src="script.js"></script>
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBGnQtc8DjCwKpbuUaOhUQYBpliUKoXDoM&libraries=places" async></script>
 
 </body>

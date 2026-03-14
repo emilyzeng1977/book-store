@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="style.css">
+    <title>Login</title>
+</head>
+
+<body>
+
+<h2>Login</h2>
+
+<input id="username" placeholder="username">
+<input id="password" type="password" placeholder="password">
+
+<button onclick="login()">Login</button>
+
+<script>
+    function login(){
+
+        const u = document.getElementById("username").value;
+        const p = document.getElementById("password").value;
+
+        if(u === "admin" && p === "v"){
+            sessionStorage.setItem("loggedIn","true");
+            window.location = "map.html";
+        }else{
+            alert("Invalid login");
+        }
+    }
+</script>
+
+</body>
+</html>

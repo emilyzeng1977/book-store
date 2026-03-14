@@ -3,6 +3,12 @@ let markers = [];
 let circles = [];
 const selectedIndexes = new Set();
 
+// Bottom output (single line)
+function setOutput(text){
+    const el = document.getElementById('outputBox');
+    if(el) el.textContent = text;
+}
+
 // Geocoding (client-side via Google Maps JS API)
 let geocoder;
 const geoCache = new Map(); // index -> { lat, lng }
@@ -48,6 +54,8 @@ function initMap() {
     setupRadiusEvent();
     setupToggleButtons();
     setupCsvUpload();
+
+    setOutput(`Ready. Locations loaded: ${locations.length}`);
     updateToggleAllButtonLabel();
 }
 
@@ -119,6 +127,9 @@ async function addLocation(index){
         circles[index] = circle;
     } catch (err){
         console.error(err);
+        const query = (loc.address || loc.name || '').trim();
+        setOutput(`Geocode failed for: ${query}`);
+
         // Roll back checkbox if geocode fails
         const cb = document.querySelector(`#locationList input[type="checkbox"][value="${index}"]`);
         if(cb){
@@ -150,6 +161,7 @@ async function resolveLatLng(index, loc){
             geoCache.set(index, coords);
             loc.lat = coords.lat;
             loc.lng = coords.lng;
+
             resolve(coords);
         });
     });
@@ -240,21 +252,46 @@ function setupCsvUpload(){
         if(!file) return;
 
         try {
+            setOutput(`Reading CSV: ${file.name} ...`);
             const text = await file.text();
             const nextLocations = parseLocationsCsv(text);
             if(nextLocations.length === 0){
-                alert('No valid rows found. CSV format must be: name,address');
+                alert('No valid rows found. CSV format: one value per line.');
+                setOutput('CSV upload failed: no valid rows.');
                 return;
             }
+
             applyLocations(nextLocations);
+
+            setOutput(`CSV loaded (${nextLocations.length}). Geocoding...`);
+            const { ok, fail } = await geocodeAllLocations(nextLocations);
+            setOutput(`Upload done. Total: ${nextLocations.length}, OK: ${ok}, Failed: ${fail}`);
         } catch (e){
             console.error(e);
             alert('Failed to read/parse CSV.');
+            setOutput('CSV upload failed: read/parse error.');
         } finally {
             // Allow re-uploading the same file
             input.value = '';
         }
     });
+}
+
+async function geocodeAllLocations(list){
+    let ok = 0;
+    let fail = 0;
+
+    // Sequential to be gentle with rate limits.
+    for(let i = 0; i < list.length; i++){
+        try {
+            await resolveLatLng(i, list[i]);
+            ok++;
+        } catch {
+            fail++;
+        }
+    }
+
+    return { ok, fail };
 }
 
 function applyLocations(nextLocations){
@@ -266,7 +303,7 @@ function applyLocations(nextLocations){
     geoCache.clear();
     geoInFlight.clear();
 
-    // IMPORTANT: reset per-index map objects so old indices don't leak into new list.
+    // Reset per-index map objects
     markers = [];
     circles = [];
 
@@ -293,24 +330,26 @@ function clearAllSelections(){
 function parseLocationsCsv(csvText){
     const lines = csvText
         .replace(/^\uFEFF/, '') // strip BOM
-        .split(/\r?\n/)
-        .map(l => l.trim())
-        .filter(l => l.length > 0);
+        .split(/\r?\n/);
 
     const out = [];
-    for(const line of lines){
-        // Skip header if it looks like name,address
+    for(const rawLine of lines){
+        const line = (rawLine || '').trim();
+        if(!line) continue;
+
+        // Skip optional header
+        if(/^name\s*$/i.test(line)) continue;
+        if(/^address\s*$/i.test(line)) continue;
         if(/^name\s*,\s*address\s*$/i.test(line)) continue;
 
+        // Support a single quoted CSV value
         const fields = parseCsvLine(line);
-        if(fields.length < 2) continue;
+        const value = (fields[0] || '').trim();
+        if(!value) continue;
 
-        const name = (fields[0] || '').trim();
-        const address = (fields.slice(1).join(',') || '').trim();
-        if(!address) continue;
-
-        out.push({ name: name || address, address });
+        out.push({ name: value, address: value });
     }
+
     return out;
 }
 
