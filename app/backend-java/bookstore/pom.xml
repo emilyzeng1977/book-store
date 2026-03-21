@@ -9,9 +9,9 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.aiprime</groupId>
-	<artifactId>bookstore-api</artifactId>
+	<artifactId>book-store</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>bookstore-api</name>
+	<name>bookstore</name>
 	<description>Demo project for aiprime</description>
 	<url/>
 	<licenses>

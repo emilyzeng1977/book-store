@@ -1,0 +1,19 @@
+# OpenClaw 核心依赖
+flask==3.0.3
+flask-cors==4.0.1
+requests==2.31.0
+pydantic==2.7.0
+uvicorn==0.23.2
+fastapi==0.107.0
+
+# ChatGLM 本地推理依赖
+torch==2.2.0
+transformers==4.43.0
+sentencepiece==0.1.99
+
+# 可选：日志和调试
+loguru==0.7.0
+python-dotenv==1.0.0
+
+# 如果你用 Docker + ChatGLM 本地模型，以下可选
+accelerate==0.25.0

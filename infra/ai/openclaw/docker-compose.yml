@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  chatglm:
+    image: chatglm/chatglm:2.1
+    container_name: chatglm
+    ports:
+      - "8000:8000"
+    environment:
+      - MODEL_ID=chatglm2-6b
+      - DEVICE=cpu           # 如果有 GPU 可改为 "cuda"
+    restart: unless-stopped
+
+  openclaw:
+    image: openclawai/openclaw:latest
+    container_name: openclaw
+    ports:
+      - "3000:3000"
+    environment:
+      - OPENCLAW_MODEL=chatglm
+      - OPENCLAW_API_URL=http://chatglm:8000
+    depends_on:
+      - chatglm
+    restart: unless-stopped

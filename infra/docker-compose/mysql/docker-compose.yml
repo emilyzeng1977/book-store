@@ -1,0 +1,19 @@
+version: "3.9"
+
+services:
+  mysql:
+    image: mysql:8.0            # MySQL 版本
+    container_name: mysql-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"   # 允许 root 没有密码
+      MYSQL_DATABASE: nissan-dev-db      # 默认创建的数据库
+      MYSQL_USER: user                   # 自定义用户
+      MYSQL_PASSWORD: user123            # 自定义用户密码
+    ports:
+      - "3306:3306"        # 映射宿主机端口 3306 到容器
+    volumes:
+      - mysql_data:/var/lib/mysql    # 数据持久化
+
+volumes:
+  mysql_data:
