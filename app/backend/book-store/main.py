@@ -10,5 +10,5 @@ def get_version() -> str:
 
 if __name__ == '__main__':
     version = get_version()
-    logging.info(f"Starting Book Store version: {version}")
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    logging.info(f"Starting Book Store Price version: {version}")
+    app.run(debug=True, host='0.0.0.0', port=8000)

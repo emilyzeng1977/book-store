@@ -7,12 +7,19 @@ executors:
 
 jobs:
   build:
-    executor: docker-executor
+    docker:
+      - image: cimg/openjdk:17.0
     steps:
       - checkout
       - run:
-          name: Dummy build step
-          command: echo "Build complete"
+          name: Build with Maven
+          command: |
+            cd app/backend-java/bookstore-api
+            mvn clean package -DskipTests -B
+      - persist_to_workspace:
+          root: app/backend-java/bookstore-api
+          paths:
+            - target/*.jar
 
   approve-to-push-image:
     type: approval
@@ -41,6 +48,44 @@ jobs:
           command: |
             source "$BASH_ENV"
             docker build -t $IMAGE_NAME:$VERSION -t $IMAGE_NAME:latest "$DOCKERFILE_PATH"
+      - run:
+          name: Push Docker image
+          command: |
+            source "$BASH_ENV"
+            docker push $IMAGE_NAME:$VERSION
+            docker push $IMAGE_NAME:latest
+
+  push-image-java:
+    executor: docker-executor
+    environment:
+      VERSION_FILE: app/backend-java/bookstore-api/version.txt
+      DOCKERFILE_PATH: app/backend-java/bookstore-api
+      PROJECT_NAME: bookstore-api
+    steps:
+      - checkout
+      - attach_workspace:
+          at: app/backend-java/bookstore-api
+      - setup_remote_docker  # 启用 Docker 引擎
+      - run:
+          name: Docker login
+          command: |
+            echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+      - run:
+          name: Read version
+          command: |
+            VERSION=$(cat "$VERSION_FILE")
+            echo "export VERSION=${VERSION}" >> "$BASH_ENV"
+            echo "IMAGE_NAME=${DOCKERHUB_USERNAME}/${PROJECT_NAME}" >> "$BASH_ENV"
+      - run:
+          name: Build Docker image (single arch)
+          command: |
+            source "$BASH_ENV"
+            docker buildx build \
+              --platform linux/amd64 \
+              --load \
+              -t $IMAGE_NAME:$VERSION \
+              -t $IMAGE_NAME:latest \
+              "$DOCKERFILE_PATH"
       - run:
           name: Push Docker image
           command: |
@@ -230,6 +275,13 @@ workflows:
   release-flow:
     jobs:
       - build
+      - approve-to-push-image-java:
+          type: approval
+          requires:
+            - build
+      - push-image-java:
+          requires:
+            - approve-to-push-image-java
       - approve-to-push-image:
           type: approval
           requires:
